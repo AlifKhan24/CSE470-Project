@@ -397,6 +397,108 @@ def confirm_send_money():
         print(f"Error in confirm_send_money: {str(e)}")
         return jsonify({'status': 'error', 'message': f'An error occurred during transaction: {str(e)}'})
 
+#Schedule Transactions
+@app.route("/schedule_transactions", methods=["GET", "POST"])
+def schedule_transactions():
+    user_id = get_user_id_from_cookie()
+    if not user_id:
+        return redirect("/login")
+
+    if request.method == "GET":
+        return render_template("schedule_transactions.html")
+
+    phone = request.form.get("account")
+    amount = request.form.get("amount")
+    scheduled_time_str = request.form.get("datetime")
+
+    try:
+        amount = float(amount)
+        if amount <= 0:
+            raise ValueError("Invalid amount")
+
+        scheduled_time = datetime.strptime(scheduled_time_str, "%Y-%m-%dT%H:%M")
+
+        with db.cursor() as cursor:
+            cursor.execute("SELECT user_id FROM user_profile WHERE phone_number = %s", (phone,))
+            receiver = cursor.fetchone()
+
+            if not receiver:
+                return render_template("schedule_transactions.html", error="Recipient not found.")
+
+            receiver_id = receiver["user_id"]
+            cursor.execute("""
+                INSERT INTO schedule_transactions (sender_id, receiver_id, amount, scheduled_time)
+                VALUES (%s, %s, %s, %s)
+            """, (user_id, receiver_id, amount, scheduled_time))
+            db.commit()
+
+        return render_template("schedule_transactions.html", success="Transaction scheduled successfully!")
+    except Exception as e:
+        return render_template("schedule_transactions.html", error="Failed to schedule transaction.")
+    
+def process_scheduled_transactions():
+    while True:
+        now = datetime.now()
+        with db.cursor() as cursor:
+            cursor.execute("""
+                SELECT * FROM schedule_transactions
+                WHERE scheduled_time <= %s AND (status IS NULL OR status = 'pending')
+            """, (now,))
+            transactions = cursor.fetchall()
+            for txn in transactions:
+                sender_id = txn["sender_id"]
+                receiver_id = txn["receiver_id"]
+                amount = txn["amount"]
+                schedule_id = txn["schedule_id"]
+
+                cursor.execute("SELECT balance FROM user_profile WHERE user_id = %s", (sender_id,))
+                sender = cursor.fetchone()
+                cursor.execute("SELECT phone_number FROM user_profile WHERE user_id = %s", (receiver_id,))
+                receiver_phone = cursor.fetchone()
+                receiver_phone = receiver_phone["phone_number"]
+                if not sender or sender["balance"] < amount:
+                    cursor.execute("UPDATE schedule_transactions SET status = 'cancelled' WHERE schedule_id = %s", (schedule_id,))
+                    alert = f"Schedule transfer to {receiver_phone} of {amount} Taka has been cancelled due to insufficient balance."
+                    cursor.execute("INSERT INTO notifications (user_id, alerts) VALUES (%s, %s)", (sender_id, alert))
+                    continue  
+
+                #Complete transfer
+                cursor.execute("UPDATE user_profile SET balance = balance - %s WHERE user_id = %s", (amount, sender_id))
+                cursor.execute("UPDATE user_profile SET balance = balance + %s WHERE user_id = %s", (amount, receiver_id))
+                alert = f"Schedule transfer to {receiver_phone} of {amount} Taka Successful!"
+                cursor.execute("INSERT INTO notifications (user_id, alerts) VALUES (%s, %s)", (sender_id, alert))             
+                cursor.execute("""
+                    INSERT INTO history (user_id, type, trx_id, account, amount)
+                    VALUES (%s, 'Scheduled Send Money', 'N/A', %s, %s)
+                """, (sender_id, receiver_phone, -amount))
+                #update status
+                cursor.execute("UPDATE schedule_transactions SET status = 'completed' WHERE schedule_id = %s", (schedule_id,))
+            db.commit()
+        sleep(5)
+
+@app.route("/api/pending-scheduled-transactions")
+def get_scheduled_transactions():
+    user_id = get_user_id_from_cookie()
+    if not user_id:
+        return jsonify([])
+
+    try:
+        with db.cursor() as cursor:
+            cursor.execute("""
+                SELECT sp.scheduled_time, sp.amount, up.phone_number AS receiver_phone
+                FROM schedule_transactions sp
+                JOIN user_profile up ON sp.receiver_id = up.user_id
+                WHERE sp.sender_id = %s AND (sp.status IS NULL OR sp.status = 'pending')
+                ORDER BY sp.scheduled_time ASC
+            """, (user_id,))
+            results = cursor.fetchall()
+            for row in results:
+                if isinstance(row["scheduled_time"], datetime):
+                    row["scheduled_time"] = row["scheduled_time"].isoformat()
+
+        return jsonify(results)
+    except Exception as e:
+        return jsonify([])
 
 
 ### Ahnaf Ashraf Jameel ###
