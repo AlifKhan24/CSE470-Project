@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Confirm Investment - Mobile Banking</title>
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      font-family: playfair display;
+      background-color: #f1f1f1;
+    }
+
+    nav {
+      background-color: #0f2749;
+      padding: 10px 20px;
+      display: flex;
+      align-items: center;
+    }
+
+    nav img {
+      height: 40px;
+      cursor: pointer;
+    }
+
+    h1 {
+      text-align: center;
+      color: #0f2749;
+      margin-top: 30px;
+      font-size: 26px;
+    }
+
+    .confirmation-box {
+      max-width: 600px;
+      margin: 30px auto;
+      background-color: #3e75c2;
+      padding: 25px;
+      border-radius: 12px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    }
+
+    .confirmation-box h2 {
+      margin-bottom: 20px;
+      color: #0f2749;
+    }
+
+    .info-item {
+      margin-bottom: 15px;
+      font-size: 18px;
+    }
+
+    .info-item strong {
+      color: #0f2749;
+    }
+
+    .button-row {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      margin-top: 30px;
+      gap: 12px;
+    }
+
+    button {
+      padding: 12px 20px;
+      background-color: #0f2749;
+      color: white;
+      border: none;
+      border-radius: 6px;
+      font-size: 16px;
+      cursor: pointer;
+      width: 200px;
+      font-family: playfair display;
+    }
+
+    button:hover {
+      background-color: #1a396a;
+    }
+
+    .popup {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      background: rgba(0, 0, 0, 0.4);
+      display: none;
+      justify-content: center;
+      align-items: center;
+    }
+
+    .popup-content {
+      background: #fff;
+      padding: 30px;
+      border-radius: 10px;
+      text-align: center;
+      max-width: 300px;
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+    }
+
+    .popup-content h3 {
+      margin-bottom: 20px;
+    }
+
+    .popup-content button {
+      background-color: #0f2749;
+      color: white;
+      border: none;
+      padding: 10px 20px;
+      margin-top: 10px;
+      border-radius: 6px;
+      cursor: pointer;
+    }
+
+    @media (max-width: 600px) {
+      .confirmation-box {
+        margin: 20px;
+        padding: 20px;
+      }
+
+      button {
+        width: 100%;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <nav>
+    <img src="https://i.postimg.cc/nLt7Kfnk/Mobile-Banking-Logo.png" alt="Logo" onclick="goHome()" />
+  </nav>
+
+  <h1>Confirm Your Investment</h1>
+
+  <div class="confirmation-box">
+    <h2>Review Details</h2>
+    <div class="info-item"><strong>Selected Option:</strong> <span id="selectedOption"></span></div>
+    <div class="info-item"><strong>Returned Amount:</strong> ৳<span id="returnedAmount"></span></div>
+    <div class="info-item"><strong>Investment Period:</strong> <span id="investmentMonths"></span> months</div>
+
+    <div class="button-row">
+      <button onclick="confirmInvestment()">Confirm</button>
+      <button onclick="goBack()">Back</button>
+    </div>
+  </div>
+
+  <div class="popup" id="resultPopup">
+    <div class="popup-content">
+      <h3 id="popupMessage">Processing...</h3>
+      <button onclick="goHome()">Home</button>
+    </div>
+  </div>
+
+  <script>
+    function goHome() {
+      window.location.href = "/home";
+    }
+
+    function goBack() {
+      window.history.back();
+    }
+
+    async function loadInvestmentInfo() {
+      try {
+        const res = await fetch("/api/get-latest-investment");
+        const data = await res.json();
+
+        if (data.success) {
+          document.getElementById("selectedOption").textContent = data.name;
+          document.getElementById("returnedAmount").textContent = data.return_amount.toFixed(2);
+          document.getElementById("investmentMonths").textContent = data.period;
+        } else {
+          alert("Failed to load investment info");
+        }
+      } catch (err) {
+        alert("Error loading data");
+      }
+    }
+
+    async function confirmInvestment() {
+      try {
+        const res = await fetch("/api/confirm-investment", { method: "POST" });
+        const data = await res.json();
+        const popup = document.getElementById("resultPopup");
+        const message = document.getElementById("popupMessage");
+
+        if (data.success) {
+          message.textContent = "Investment Successful!!!";
+        } else {
+          message.textContent = "Insufficient Balance";
+        }
+
+        popup.style.display = "flex";
+      } catch (err) {
+        alert("Error during confirmation");
+      }
+    }
+
+    // Load investment info on page load
+    loadInvestmentInfo();
+  </script>
+
+</body>
+</html>

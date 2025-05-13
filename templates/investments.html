@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Invest - Mobile Banking</title>
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      font-family: playfair display;
+      background: #f1f1f1;
+    }
+
+    nav {
+      background-color: #0f2749;
+      padding: 10px 20px;
+      display: flex;
+      align-items: center;
+    }
+
+    nav img {
+      height: 40px;
+      cursor: pointer;
+    }
+
+    h1 {
+      text-align: center;
+      margin: 30px 0 10px;
+      color: #0f2749;
+      font-size: 28px;
+    }
+
+    .subheading {
+      text-align: center;
+      color: #666;
+      font-size: 16px;
+      margin-bottom: 30px;
+    }
+
+    form {
+      max-width: 900px;
+      margin: auto;
+      background: #fff;
+      border-radius: 10px;
+      padding: 30px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+    }
+
+    .options-group {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 20px;
+      justify-content: center;
+    }
+
+    .option-label {
+      flex: 1 1 200px;
+      /* padding: 20px; */
+      border: 2px solid #ccc;
+      border-radius: 10px;
+      cursor: pointer;
+      background-color: #aac5ea;
+      transition: border 0.3s, background 0.3s;
+      text-align: center;
+      position: relative;
+    }
+
+    .option-label input {
+      display: none;
+    }
+
+    .option-label span {
+      display: block;
+      transition: background-color 0.3s, color 0.3s;
+      border-radius: 8px;
+      padding: 5px;
+    }
+
+    .option-label input:checked + span {
+      background-color: #0f2749;
+      color: white;
+    }
+
+    .form-group {
+      margin-top: 30px;
+    }
+
+    .form-group label {
+      display: block;
+      margin-bottom: 8px;
+      font-weight: bold;
+    }
+
+    .form-group input {
+      width: 100%;
+      padding: 10px;
+      border-radius: 6px;
+      border: 1px solid #ccc;
+      font-size: 16px;
+    }
+
+    .button-row {
+      display: flex;
+      justify-content: center;
+      margin-top: 30px;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .button-row.single {
+      flex-direction: column;
+      align-items: center;
+    }
+
+    button {
+      padding: 12px 20px;
+      background-color: #0f2749;
+      color: white;
+      border: none;
+      border-radius: 6px;
+      font-size: 16px;
+      cursor: pointer;
+      width: 200px;
+    }
+
+    button:hover {
+      background-color: #1a396a;
+    }
+
+    @media (max-width: 600px) {
+      .option-label {
+        flex: 1 1 100%;
+      }
+
+      button {
+        width: 100%;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <nav>
+    <img src="https://i.postimg.cc/nLt7Kfnk/Mobile-Banking-Logo.png" alt="Logo" onclick="goHome()" />
+  </nav>
+
+  <h1>Investment Options</h1>
+  <div class="subheading">Select one investment option and enter your details to proceed</div>
+
+  <form id="investmentForm" onsubmit="submitInvestment(event)">
+
+    <div class="options-group" id="investmentOptions">
+      <!-- Options will be populated from backend -->
+    </div>
+
+    <div class="form-group">
+      <label for="amount">Invest Amount</label>
+      <input type="number" id="amount" name="amount" min="1" required>
+    </div>
+
+    <div class="form-group">
+      <label for="months">Investment Period (Months)</label>
+      <input type="number" id="months" name="months" min="1" max="12" required>
+    </div>
+
+    <div class="button-row single">
+      <button type="submit">Proceed</button>
+      <button type="button" onclick="goBack()">Back</button>
+    </div>
+
+  </form>
+
+  <script>
+    function goHome() {
+      window.location.href = "/home";
+    }
+  
+    function goBack() {
+      window.history.back();
+    }
+  
+    // Fetch investment options from backend
+    async function loadInvestmentOptions() {
+      try {
+        const res = await fetch("/api/get-investment-options");
+        const data = await res.json();
+  
+        if (Array.isArray(data)) {
+          const container = document.getElementById("investmentOptions");
+          data.forEach(option => {
+            const div = document.createElement("label");
+            div.className = "option-label";
+            div.innerHTML = `
+              <input type="radio" name="investmentOption" value="${option.name}" required />
+              <span>
+                <strong>${option.name}</strong><br>
+                <small>${option.roi}% Return</small>
+              </span>
+            `;
+            container.appendChild(div);
+          });
+        } else {
+          alert("Failed to load investment options.");
+        }
+      } catch (err) {
+        console.error("Error loading investment options:", err);
+        alert("Error loading options. Please try again later.");
+      }
+    }
+  
+    // Call the loader on page load
+    loadInvestmentOptions();
+  
+    async function submitInvestment(e) {
+      e.preventDefault();
+      const form = document.getElementById("investmentForm");
+      const formData = new FormData(form);
+      const selectedOption = formData.get("investmentOption");
+      const amount = formData.get("amount");
+      const months = formData.get("months");
+  
+      if (!selectedOption) {
+        alert("Please select one investment option.");
+        return;
+      }
+  
+      if (months < 1 || months > 12) {
+        alert("Investment period must be between 1 and 12 months.");
+        return;
+      }
+  
+      try {
+        const res = await fetch("/api/submit-investment", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ option: selectedOption, amount, months })
+        });
+  
+        const result = await res.json();
+  
+        if (result.success) {
+          window.location.href = "/investment_confirmation.html";
+        } else {
+          alert(result.message || "There was an error processing the transaction. Please try again.");
+        }
+      } catch (error) {
+        alert("Server error. Please try again later.");
+        console.error(error);
+      }
+    }
+  </script>
+
+</body>
+</html>
