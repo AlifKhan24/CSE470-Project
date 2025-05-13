@@ -187,6 +187,45 @@ def update_profile():
         return redirect(url_for('edit_profile'))
 
 
+# Set Transaction Limit
+@app.route("/set_limit", methods=["GET", "POST"])
+def set_limit():
+    user_id = get_user_id_from_cookie()
+
+    if request.method == "GET":
+        if not user_id:
+            return redirect("/login") 
+
+        try:
+            with db.cursor() as cursor:
+                cursor.execute("SELECT transaction_limit FROM user_profile WHERE user_id = %s", (user_id,))
+                result = cursor.fetchone()
+                transaction_limit = result["transaction_limit"] if result else "Unavailable"
+        except Exception as e:
+            print("Error fetching transaction limit:", e)
+            transaction_limit = "Unavailable"
+
+        return render_template("transaction_limit.html", transaction_limit=transaction_limit)
+    try:
+        data = request.get_json()
+        amount = int(data.get("amount", 0))
+
+        if amount <= 0:
+            return jsonify({"success": False, "message": "Invalid amount"}), 400
+
+        with db.cursor() as cursor:
+            cursor.execute("UPDATE user_profile SET transaction_limit = %s WHERE user_id = %s", (amount, user_id))
+            alert = f"Your Transaction Limit has been updated to {amount} Taka per transaction."
+            cursor.execute("INSERT INTO notifications (user_id, alerts) VALUES (%s, %s)", (user_id, alert))
+            db.commit()
+
+        return jsonify({"success": True})
+
+    except Exception as e:
+        db.rollback()
+        print("Transaction limit update error:", e)
+        return jsonify({"success": False, "message": "Server error"}), 500
+
 
 #send_money_internationally
 @app.route('/submit_transaction', methods=['POST'])
