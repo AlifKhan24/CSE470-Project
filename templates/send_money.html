@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Send Money - Mobile Banking</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      font-family: playfair display;
+    }
+
+    body {
+      background-image: url('https://i.postimg.cc/cHqwxxN1/background-image-money-one-hundred-dollar-bills-are-scattered-air-blue-toned-1187703-14329.avif');
+      background-size: cover;
+      background-position: center;
+      background-attachment: fixed;
+      color: #fff;
+      min-height: 100vh;
+    }
+
+    .navbar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 15px 20px;
+      background-color: #0f2749;
+    }
+
+    .logo-btn {
+      width: 120px;
+      height: 50px;
+      background-color: transparent;
+      border: none;
+      cursor: pointer;
+      background-image: url('https://i.postimg.cc/nLt7Kfnk/Mobile-Banking-Logo.png');
+      background-size: contain;
+      background-repeat: no-repeat;
+      background-position: center;
+    }
+
+    .main-content {
+      padding: 20px;
+      margin-top: 20px;
+      display: flex;
+      flex-direction: column;
+      min-height: calc(100vh - 100px);
+    }
+
+    .button-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 35px;
+      margin-top: 10px;
+      flex-grow: 1;
+    }
+
+    .menu-button {
+      background-color: rgba(255, 255, 255, 0.9);
+      color: #333;
+      border: none;
+      border-radius: 10px;
+      padding: 20px 15px;
+      font-size: 16px;
+      font-weight: bold;
+      text-align: center;
+      cursor: pointer;
+      transition: transform 0.2s, box-shadow 0.2s;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 120px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .menu-button::after {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background-image: var(--bg-image);
+      background-size: contain;
+      background-position: center;
+      background-repeat: no-repeat;
+      opacity: 0.2;
+      z-index: 0;
+      margin: 10px;
+    }
+
+    .menu-button span {
+      position: relative;
+      z-index: 1;
+      text-shadow: 0 0 5px rgba(255, 255, 255, 0.8);
+    }
+
+    .menu-button:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
+    }
+
+    .back-button-container {
+      display: flex;
+      justify-content: center;
+      margin-top: auto;
+      padding-bottom: 20px;
+    }
+
+    .back-button {
+      background-color: #ff4444;
+      color: white;
+      border: none;
+      border-radius: 25px;
+      padding: 12px 30px;
+      font-size: 16px;
+      font-weight: bold;
+      cursor: pointer;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+      transition: background-color 0.3s;
+    }
+
+    .back-button:hover {
+      background-color: #cc0000;
+    }
+  </style>
+
+  <!-- Success/Failure Popup Modal -->
+  <div id="popupModal" style="
+    display: none;
+    position: fixed;
+    z-index: 9999;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background-color: white;
+    color: black;
+    padding: 20px 30px;
+    border-radius: 10px;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
+    text-align: center;
+    font-size: 18px;
+  ">
+    <p id="popupMessage"></p>
+    <button onclick="closePopup()" style="
+      margin-top: 15px;
+      padding: 10px 20px;
+      background-color: #0f2749;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+    ">OK</button>
+  </div>
+</head>
+
+<body data-success="{{ success | default('') }}">
+  <nav class="navbar">
+    <button class="logo-btn" id="logoBtn"></button>
+  </nav>
+
+  <div class="main-content">
+    <h1 style="color: #333; text-align: center; margin-bottom: 20px;">Send Money</h1>
+
+    <!-- Buttons for Send Now and Schedule Transactions -->
+    <div class="button-grid">
+      <button type="button" class="menu-button" id="sendNowBtn" style="--bg-image: url('https://i.postimg.cc/sXP6yZSJ/2761118.png')">
+        <span>Send Now</span>
+      </button>
+      <button type="button" class="menu-button" id="sendIntBtn" style="--bg-image: url('https://i.postimg.cc/JzMdGWzH/glo.png')">
+        <span>Send Money Internationally</span>
+      </button>
+      <button type="button" class="menu-button" id="scheduleBtn" style="--bg-image: url('https://i.postimg.cc/0NTNSq7X/recurring-payment-icon-circular-arrows-600nw-2542184409.webp')">
+        <span>Schedule Transactions</span>
+      </button>
+    </div>
+
+    <div class="back-button-container">
+      <button class="back-button" id="backBtn">Back</button>
+    </div>
+  </div>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', function () {
+      document.getElementById('logoBtn').addEventListener('click', function () {
+        window.location.href = "/home";
+      });
+
+      document.getElementById('backBtn').addEventListener('click', function () {
+        window.location.href = "/home";
+      });
+
+      document.getElementById('sendNowBtn').addEventListener('click', function () {
+        window.location.href = "/send_now";
+      });
+
+      document.getElementById('sendIntBtn').addEventListener('click', function () {
+        window.location.href = "/send_money_int";
+      });
+
+      document.getElementById('scheduleBtn').addEventListener('click', function () {
+        window.location.href = "/schedule_transactions";
+      });
+
+      // Read success value from data attribute
+      const success = document.body.dataset.success;
+      if (success === "1") {
+        showPopup("Money sent successfully!", true);
+      } else if (success === "0") {
+        showPopup("Transaction failed. Please try again.", false);
+      }
+    });
+
+    function showPopup(message, isSuccess = true) {
+      const popup = document.getElementById('popupModal');
+      const messageEl = document.getElementById('popupMessage');
+      messageEl.innerText = message;
+      popup.style.backgroundColor = isSuccess ? '#d4edda' : '#f8d7da';
+      messageEl.style.color = isSuccess ? '#155724' : '#721c24';
+      popup.style.display = 'block';
+    }
+
+    function closePopup() {
+      document.getElementById('popupModal').style.display = 'none';
+    }
+  </script>
+</body>
+</html>
