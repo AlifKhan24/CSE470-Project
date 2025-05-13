@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gift Card - Mobile Banking</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: playfair display;
+            background: url('https://i.postimg.cc/hPgwZJ6q/360-F-285401217-dv35-YVIXgkycc-VHd-BPB78-DB42m66-Gn-Yj.jpg') no-repeat center center fixed;
+            background-size: cover;
+        }
+
+        nav {
+            background-color: #0f2749;
+            padding: 10px 20px;
+            display: flex;
+            align-items: center;
+        }
+
+        nav img {
+            height: 40px;
+            cursor: pointer;
+        }
+
+        .form-container {
+            background-color: #0f2749;
+            color: #aac5ea;
+            width: 300px;
+            margin: 60px auto;
+            padding: 30px 40px;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+        }
+
+        .form-container h2 {
+            text-align: center;
+            margin-bottom: 30px;
+            color: #aac5ea;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 6px;
+        }
+
+        .form-group input {
+            width: 100%;
+            padding: 8px;
+            border: none;
+            border-radius: 4px;
+        }
+
+        .button-group {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            margin-top: 20px;
+        }
+
+        .button-group button {
+            padding: 10px;
+            border: none;
+            border-radius: 4px;
+            background-color: #aac5ea;
+            color: black;
+            font-weight: bold;
+            cursor: pointer;
+            font-family:  playfair display;
+        }
+
+        .button-group button:hover {
+            background-color: #ddd;
+        }
+
+        .back-button {
+            margin-top: 20px;
+            text-align: center;
+        }
+
+        .back-button button {
+            padding: 8px 20px;
+            background-color: #cc0000;
+            border: none;
+            border-radius: 4px;
+            color: black;
+            font-weight: bold;
+            cursor: pointer;
+            font-family:  playfair display;
+        }
+
+        /* Popup Styles */
+        #popup {
+            display: {% if success or error %}flex{% else %}none{% endif %};
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+
+        .popup-content {
+            background-color: #fff;
+            padding: 20px;
+            border-radius: 10px;
+            text-align: center;
+            width: 300px;
+        }
+
+        .popup-content h3 {
+            margin-bottom: 20px;
+        }
+
+        .popup-content button {
+            padding: 10px;
+            background-color: #0f2749;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+        .popup-content button:hover {
+            background-color: #aac5ea;
+        }
+
+        .error-message {
+            color: red;
+            font-size: 0.8em;
+            margin-top: 5px;
+        }
+    </style>
+</head>
+
+<body>
+
+    <nav>
+        <img src="https://i.postimg.cc/nLt7Kfnk/Mobile-Banking-Logo.png" alt="Logo" onclick="goHome()">
+    </nav>
+
+    <main class="form-container">
+        <h2>Gift Card Redemption</h2>
+        <form method="POST" action="/gift_card" id="giftCardForm">
+            <div class="form-group">
+                <label for="giftcode">Gift Card Code</label>
+                <input type="text" id="giftcode" name="giftcode" placeholder="Enter Gift Card Code" required>
+                <small id="giftcode-error" class="error-message"></small>
+            </div>
+
+            <div class="button-group">
+                <button type="submit" id="redeemButton">Redeem Gift Card</button>
+            </div>
+        </form>
+
+        <div class="back-button">
+            <button onclick="goBack()">Back</button>
+        </div>
+    </main>
+
+    <div id="popup" class="popup">
+        <div class="popup-content">
+            <h3 id="popup-message">
+                {% if success %}{{ success }}{% elif error %}{{ error }}{% else %}&nbsp;{% endif %}
+            </h3>
+            <button onclick="goHome()">Go to Home</button>
+            <button onclick="closePopup()">Close</button>
+        </div>
+    </div>
+
+    <script>
+        function goHome() {
+            window.location.href = "home";
+        }
+
+        function goBack() {
+            window.history.back();
+        }
+
+        function closePopup() {
+            document.getElementById('popup').style.display = 'none';
+        }
+
+        const giftCardForm = document.getElementById('giftCardForm');
+        const giftcodeInput = document.getElementById('giftcode');
+        const giftcodeError = document.getElementById('giftcode-error');
+        const redeemButton = document.getElementById('redeemButton');
+        const popup = document.getElementById('popup');
+        const popupMessage = document.getElementById('popup-message');
+
+        giftCardForm.addEventListener('submit', function(event) {
+            event.preventDefault();
+
+            const giftcode = giftcodeInput.value.trim();
+            let isValid = true;
+
+            if (!giftcode) {
+                giftcodeError.textContent = 'Gift card code is required.';
+                isValid = false;
+            } else if (giftcode.length < 8) {
+                giftcodeError.textContent = 'Gift card code must be at least 8 characters.';
+                isValid = false;
+            } else {
+                giftcodeError.textContent = '';
+            }
+
+            if (isValid) {
+                redeemButton.disabled = true;
+                redeemButton.textContent = 'Redeeming...';
+                popup.style.display = 'none';
+
+                fetch('/gift_card', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                    },
+                    body: `giftcode=${giftcode}`,
+                })
+                .then(response => response.text())
+                .then(data => {
+                    redeemButton.disabled = false;
+                    redeemButton.textContent = 'Redeem Gift Card';
+                    const parser = new DOMParser();
+                    const doc = parser.parseFromString(data, 'text/html');
+                    const newPopupMessage = doc.getElementById('popup-message').textContent;
+                    popupMessage.textContent = newPopupMessage.trim();
+                    popup.style.display = 'flex';
+
+                    if (newPopupMessage.includes('Code Redeemed')) {
+                        giftcodeInput.value = '';
+                    }
+
+                    setTimeout(closePopup, 5000);
+                })
+                .catch(error => {
+                    redeemButton.disabled = false;
+                    redeemButton.textContent = 'Redeem Gift Card';
+                    popupMessage.textContent = 'An error occurred. Please try again.';
+                    popup.style.display = 'flex';
+                    setTimeout(closePopup, 5000);
+                    console.error('Error:', error);
+                });
+            }
+        });
+    </script>
+
+</body>
+</html>
