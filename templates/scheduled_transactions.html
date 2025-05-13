@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Scheduled Transactions History</title>
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      font-family: playfair display;
+      background: url('https://i.postimg.cc/W4s8Yrp6/time.jpg') no-repeat center center fixed;
+      background-size: cover;
+      color: #aac5ea;
+    }
+
+    nav {
+      background-color: #0f2749;
+      padding: 10px 20px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    nav img {
+      height: 40px;
+      cursor: pointer;
+    }
+
+    .history-container {
+      background-color: #0f2749d9;
+      width: 80%;
+      max-width: 800px;
+      margin: 50px auto;
+      padding: 30px;
+      border-radius: 10px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.4);
+    }
+
+    h2 {
+      text-align: center;
+      margin-bottom: 30px;
+      color: #aac5ea;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      text-align: center;
+    }
+
+    th, td {
+      padding: 12px;
+      border: 1px solid #aac5ea;
+    }
+
+    th {
+      background-color: #1c3a63;
+    }
+
+    .back-button {
+      margin-top: 30px;
+      text-align: center;
+    }
+
+    .back-button button {
+      padding: 10px 20px;
+      background-color: #cc0000;
+      border: none;
+      border-radius: 4px;
+      color: black;
+      font-weight: bold;
+      cursor: pointer;
+    }
+
+    .back-button button:hover {
+      background-color: #ff4d4d;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Navigation Bar -->
+  <nav>
+    <img src="https://i.postimg.cc/nLt7Kfnk/Mobile-Banking-Logo.png" alt="Logo" onclick="goHome()" />
+  </nav>
+
+  <!-- Scheduled Transactions Table -->
+  <div class="history-container">
+    <h2>Scheduled Transaction History</h2>
+    <table>
+      <thead>
+        <tr>
+          <th>Receiver Number</th>
+          <th>Amount</th>
+          <th>Scheduled Time</th>
+        </tr>
+      </thead>
+      <tbody id="transactionTable">
+        <!-- Data loads here -->
+      </tbody>
+    </table>
+
+    <div class="back-button">
+      <button onclick="goBack()">Back</button>
+    </div>
+  </div>
+
+  <script>
+    function goHome() {
+      window.location.href = "/home";
+    }
+
+    function goBack() {
+      window.history.back();
+    }
+
+    // Fetch from backend and populate table
+    fetch("/api/pending-scheduled-transactions")
+      .then(response => response.json())
+      .then(data => {
+        const table = document.getElementById('transactionTable');
+        if (data.length === 0) {
+          const row = document.createElement('tr');
+          row.innerHTML = `<td colspan="3">No pending transactions.</td>`;
+          table.appendChild(row);
+        } else {
+          data.forEach(tx => {
+            const row = document.createElement('tr');
+            const formattedTime = new Date(tx.scheduled_time).toLocaleString();
+            row.innerHTML = `
+              <td>${tx.receiver_phone}</td>
+              <td>${tx.amount}</td>
+              <td>${formattedTime}</td>
+            `;
+            table.appendChild(row);
+          });
+        }
+      })
+      .catch(error => {
+        console.error("Failed to load scheduled transactions:", error);
+      });
+  </script>
+
+</body>
+</html>

@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Schedule Transactions - Mobile Banking</title>
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      font-family: playfair display;
+      background: url('https://i.postimg.cc/W4s8Yrp6/time.jpg') no-repeat center center fixed;
+      background-size: cover;
+    }
+
+    nav {
+      background-color: #0f2749;
+      padding: 10px 20px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    nav img {
+      height: 40px;
+      cursor: pointer;
+    }
+
+    .nav-right {
+      display: flex;
+      align-items: center;
+      gap: 15px;
+    }
+
+    .nav-right button {
+      padding: 8px 12px;
+      background-color: #aac5ea;
+      border: none;
+      border-radius: 4px;
+      font-weight: bold;
+      color: black;
+      cursor: pointer;
+    }
+
+    .nav-right button:hover {
+      background-color: #ddd;
+    }
+
+    .form-container {
+      background-color: #0f2749;
+      color: #aac5ea;
+      width: 300px;
+      margin: 60px auto;
+      padding: 30px 40px;
+      border-radius: 10px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.5);
+    }
+
+    .form-container h2 {
+      text-align: center;
+      margin-bottom: 30px;
+      color: #aac5ea;
+    }
+
+    .form-group {
+      margin-bottom: 20px;
+    }
+
+    .form-group label {
+      display: block;
+      margin-bottom: 6px;
+    }
+
+    .form-group input {
+      width: 100%;
+      padding: 8px;
+      border: none;
+      border-radius: 4px;
+    }
+
+    .button-group {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      margin-top: 20px;
+    }
+
+    .button-group button {
+      padding: 10px;
+      border: none;
+      border-radius: 4px;
+      background-color: #aac5ea;
+      color: black;
+      font-weight: bold;
+      cursor: pointer;
+    }
+
+    .button-group button:hover {
+      background-color: #ddd;
+    }
+
+    .back-button {
+      margin-top: 20px;
+      text-align: center;
+    }
+
+    .back-button button {
+      padding: 8px 20px;
+      background-color: #cc0000;
+      border: none;
+      border-radius: 4px;
+      color: black;
+      font-weight: bold;
+      cursor: pointer;
+    }
+
+    .message {
+      text-align: center;
+      margin-top: 10px;
+      font-size: 14px;
+    }
+
+    .error {
+      color: red;
+    }
+
+    .success {
+      color: lightgreen;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Navigation Bar -->
+  <nav>
+    <img src="https://i.postimg.cc/nLt7Kfnk/Mobile-Banking-Logo.png" alt="Logo" onclick="goHome()" />
+    <div class="nav-right">
+      <button onclick="location.href='/scheduled_transactions'">View Scheduled Transactions</button>
+
+    </div>
+  </nav>
+
+  <!-- Main Form -->
+  <div class="form-container">
+    <h2>Schedule Transactions</h2>
+
+    <form method="POST" action="/schedule_transactions">
+      <div class="form-group">
+        <label for="account">Phone Number</label>
+        <input type="text" id="account" name="account" placeholder="Enter Phone Number" required />
+      </div>
+
+      <div class="form-group">
+        <label for="amount">Amount</label>
+        <input type="number" id="amount" name="amount" placeholder="Enter Amount" min="1" required />
+      </div>
+
+      <div class="form-group">
+        <label for="datetime">Date & Time</label>
+        <input type="datetime-local" id="datetime" name="datetime" required min="{{ current_time }}" />
+      </div>
+
+      <div class="button-group">
+        <button type="submit">Confirm</button>
+      </div>
+    </form>
+
+    <div class="back-button">
+      <button onclick="goBack()">Back</button>
+    </div>
+
+    {% if error %}
+    <div class="message error">{{ error }}</div>
+    {% elif success %}
+    <div class="message success">{{ success }}</div>
+    {% endif %}
+  </div>
+
+  <script>
+    function goHome() {
+      window.location.href = "/home";
+    }
+
+    function goBack() {
+      window.location.href = "/send_money";
+    }
+
+    // Optional JS to set min datetime to now
+    window.onload = function () {
+      const now = new Date().toISOString().slice(0, 16);
+      document.getElementById('datetime').min = now;
+    }
+  </script>
+
+</body>
+</html>
