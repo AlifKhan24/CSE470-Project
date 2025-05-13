@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Send Money Internationally - Mobile Banking</title>
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      font-family:playfair display;
+      background: url('https://i.postimg.cc/C1zXvjMF/int.avif') no-repeat center center fixed;
+      background-size: cover;
+    }
+    nav {
+      background-color: #0f2749;
+      padding: 10px 20px;
+      display: flex;
+      align-items: center;
+    }
+    nav img {
+      height: 40px;
+      cursor: pointer;
+    }
+    .form-container {
+      background-color: #0f2749;
+      color: #aac5ea;
+      width: 300px;
+      margin: 60px auto;
+      padding: 30px 40px;
+      border-radius: 10px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.5);
+    }
+    .form-container h2 {
+      text-align: center;
+      margin-bottom: 30px;
+      color: #aac5ea;
+    }
+    .form-group {
+      margin-bottom: 20px;
+    }
+    .form-group label {
+      display: block;
+      margin-bottom: 6px;
+    }
+    .form-group input,
+    .form-group select {
+      width: 100%;
+      padding: 8px;
+      border: none;
+      border-radius: 4px;
+    }
+    .button-group {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      margin-top: 20px;
+    }
+    .button-group button {
+      padding: 10px;
+      border: none;
+      border-radius: 4px;
+      background-color: #aac5ea;
+      color: black;
+      font-weight: bold;
+      cursor: pointer;
+    }
+    .button-group button:hover {
+      background-color: #ddd;
+    }
+    .back-button {
+      margin-top: 20px;
+      text-align: center;
+    }
+    .back-button button {
+      padding: 8px 20px;
+      background-color: #cc0000;
+      border: none;
+      border-radius: 4px;
+      color: black;
+      font-weight: bold;
+      cursor: pointer;
+    }
+    
+    .error-message {
+      color: #ff4444;
+      background-color: rgba(255, 255, 255, 0.7);
+      padding: 10px;
+      border-radius: 4px;
+      margin-bottom: 15px;
+    }
+    
+    .success-message {
+      color: #4CAF50;
+      background-color: rgba(255, 255, 255, 0.7);
+      padding: 10px;
+      border-radius: 4px;
+      margin-bottom: 15px;
+    }
+  </style>
+</head>
+<body>
+  <!-- Navigation Bar -->
+  <nav>
+    <img src="https://i.postimg.cc/nLt7Kfnk/Mobile-Banking-Logo.png" alt="Logo" onclick="goHome()" />
+  </nav>
+
+  <!-- Main Form -->
+  <div class="form-container">
+    <h2>Send Money Internationally</h2>
+    
+    <div id="error-container" class="error-message" style="display: none;"></div>
+    <div id="success-container" class="success-message" style="display: none;"></div>
+    
+    <form id="internationalMoneyForm">
+      <div class="form-group">
+        <label for="accountNo">Recipient Account No.</label>
+        <input type="text" id="accountNo" name="accountNo" placeholder="Enter account number" required>
+      </div>
+
+      <div class="form-group">
+        <label for="receiversName">Recipient's Name</label>
+        <input type="text" id="receiversName" name="receiversName" placeholder="Enter recipient's name" required>
+      </div>
+
+      <div class="form-group">
+        <label for="country">Country</label>
+        <select id="country" name="country" required>
+          <option value="">Select Country</option>
+          <option value="Australia">Australia</option>
+          <option value="Canada">Canada</option>
+          <option value="China">China</option>
+          <option value="France">France</option>
+          <option value="Germany">Germany</option>
+          <option value="Saudi Arabia">Saudi Arabia</option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label for="amount">Amount in BDT</label>
+        <input type="number" id="amount" name="amount" placeholder="Enter amount in BDT" min="1" step="0.01" required>
+      </div>
+
+      <div class="button-group">
+        <button type="button" onclick="submitTransaction()">Send Money</button>
+      </div>
+    </form>
+
+    <div class="back-button">
+      <button onclick="goBack()">Back</button>
+    </div>
+  </div>
+
+  <script>
+    function goHome() {
+      window.location.href = "/home";
+    }
+
+    function goBack() {
+      window.history.back();
+    }
+
+    function showError(message) {
+      const errorContainer = document.getElementById('error-container');
+      errorContainer.textContent = message;
+      errorContainer.style.display = 'block';
+      
+      const successContainer = document.getElementById('success-container');
+      successContainer.style.display = 'none';
+    }
+
+    function showSuccess(message) {
+      const successContainer = document.getElementById('success-container');
+      successContainer.textContent = message;
+      successContainer.style.display = 'block';
+      
+      const errorContainer = document.getElementById('error-container');
+      errorContainer.style.display = 'none';
+    }
+
+    function validateForm() {
+      const accountNo = document.getElementById('accountNo').value.trim();
+      const receiversName = document.getElementById('receiversName').value.trim();
+      const country = document.getElementById('country').value;
+      const amount = parseFloat(document.getElementById('amount').value);
+
+      if (!accountNo) {
+        showError('Please enter recipient account number');
+        return false;
+      }
+
+      if (!receiversName) {
+        showError('Please enter recipient\'s name');
+        return false;
+      }
+
+      if (!country) {
+        showError('Please select a country');
+        return false;
+      }
+
+      if (isNaN(amount) || amount <= 0) {
+        showError('Please enter a valid amount');
+        return false;
+      }
+
+      return true;
+    }
+
+    function submitTransaction() {
+      if (!validateForm()) {
+        return;
+      }
+
+      const formData = {
+        account_no: document.getElementById('accountNo').value.trim(),
+        receivers_name: document.getElementById('receiversName').value.trim(),
+        country: document.getElementById('country').value,
+        amount: parseFloat(document.getElementById('amount').value)
+      };
+
+      // Show loading message
+      showSuccess('Processing your request...');
+
+      fetch('/submit_transaction', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(formData)
+      })
+      .then(response => response.json())
+      .then(data => {
+        if (data.success) {
+          // Redirect to confirmation page
+          window.location.href = '/int_money_confirm_transaction';
+        } else {
+          showError(data.message || 'Something went wrong. Please try again.');
+        }
+      })
+      .catch(error => {
+        console.error('Error:', error);
+        showError('Network error. Please try again later.');
+      });
+    }
+  </script>
+</body>
+</html>

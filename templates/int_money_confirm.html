@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Send Money Internationally - Mobile Banking</title>
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      font-family: playfair display;
+      background: url('https://i.postimg.cc/C1zXvjMF/int.avif') no-repeat center center fixed;
+      background-size: cover;
+    }
+
+    nav {
+      background-color: #0f2749;
+      padding: 10px 20px;
+      display: flex;
+      align-items: center;
+    }
+
+    nav img {
+      height: 40px;
+      cursor: pointer;
+    }
+
+    .form-container {
+      background-color: #0f2749;
+      color: #aac5ea;
+      width: 300px;
+      margin: 60px auto;
+      padding: 30px 40px;
+      border-radius: 10px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.5);
+    }
+
+    .form-container h2 {
+      text-align: center;
+      margin-bottom: 30px;
+      color: #aac5ea;
+    }
+
+    .form-group {
+      margin-bottom: 20px;
+    }
+
+    .form-group label {
+      display: block;
+      margin-bottom: 6px;
+    }
+
+    .form-group input {
+      width: 100%;
+      padding: 8px;
+      border: none;
+      border-radius: 4px;
+      background-color: #fff;
+      color: #000;
+    }
+
+    .message-box {
+      background-color: #fff;
+      color: #333;
+      padding: 20px;
+      border-radius: 10px;
+      margin-bottom: 20px;
+    }
+
+    .message-box .info-item {
+      margin-bottom: 10px;
+      font-size: 16px;
+    }
+
+    .message-box .info-item strong {
+      color: #0f2749;
+    }
+
+    .button-group {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      margin-top: 20px;
+    }
+
+    .button-group button {
+      padding: 10px;
+      border: none;
+      border-radius: 4px;
+      background-color: #aac5ea;
+      color: black;
+      font-weight: bold;
+      cursor: pointer;
+      font-family: playfair display;
+    }
+
+    .button-group button:hover {
+      background-color: #ddd;
+    }
+
+    .back-button {
+      margin-top: 20px;
+      text-align: center;
+    }
+
+    .back-button button {
+      padding: 8px 20px;
+      background-color: #cc0000;
+      border: none;
+      border-radius: 4px;
+      color: black;
+      font-weight: bold;
+      cursor: pointer;
+      font-family: playfair display;
+    }
+
+    #loading {
+      text-align: center;
+      color: white;
+      display: none;
+    }
+
+    #error-message {
+      background-color: #ffdddd;
+      color: #ff0000;
+      padding: 10px;
+      border-radius: 5px;
+      margin-bottom: 15px;
+      display: none;
+    }
+
+    /* Popup Modal */
+    .modal {
+      display: none;
+      position: fixed;
+      z-index: 1000;
+      left: 0;
+      top: 0;
+      width: 100%;
+      height: 100%;
+      overflow: auto;
+      background-color: rgba(0,0,0,0.6);
+    }
+
+    .modal-content {
+      background-color: white;
+      color: #000;
+      margin: 15% auto;
+      padding: 20px;
+      border: 2px solid #888;
+      width: 80%;
+      max-width: 400px;
+      border-radius: 10px;
+      text-align: center;
+    }
+
+    .modal-content.success {
+      border-color: green;
+    }
+
+    .modal-content.error {
+      border-color: red;
+    }
+
+    .close-btn {
+      margin-top: 15px;
+      padding: 10px 20px;
+      background-color: #0f2749;
+      color: #fff;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+
+    .close-btn:hover {
+      background-color: #06203b;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Navigation Bar -->
+  <nav>
+    <img src="https://i.postimg.cc/nLt7Kfnk/Mobile-Banking-Logo.png" alt="Logo" onclick="goHome()" />
+  </nav>
+
+  <!-- Main Form -->
+  <div class="form-container">
+    <h2>Confirm International Transfer</h2>
+
+    <div id="error-message"></div>
+    <div id="loading">Processing your request...</div>
+
+    <div class="message-box">
+      <div class="info-item"><strong>Account No:</strong> <span id="account">{{ account_no }}</span></div>
+      <div class="info-item"><strong>Receiver's Name:</strong> <span id="receiver">{{ receivers_name }}</span></div>
+      <div class="info-item"><strong>Country:</strong> <span id="country">{{ country }}</span></div>
+      <div class="info-item"><strong>Amount in BDT:</strong> <span id="amount-bdt">{{ amount_in_bdt }}</span></div>
+      <div class="info-item"><strong>Amount in {{ country }} Currency:</strong> <span id="amount-foreign">{{ amount_in_selected_country }}</span></div>
+      <input type="hidden" id="trx-id" value="{{ trx_id }}">
+    </div>
+
+    <div class="button-group">
+      <button onclick="confirmSend()">Confirm and Send</button>
+    </div>
+
+    <div class="back-button">
+      <button onclick="goBack()">Cancel</button>
+    </div>
+  </div>
+
+  <!-- Modal -->
+  <div id="popup-modal" class="modal">
+    <div class="modal-content" id="popup-content">
+      <p id="popup-message">This is a popup message</p>
+      <button class="close-btn" onclick="closePopup()">OK</button>
+    </div>
+  </div>
+
+  <script>
+    function goHome() {
+      window.location.href = "/home";
+    }
+
+    function goBack() {
+      window.location.href = "/send_money_int";
+    }
+
+    function showError(message) {
+      const errorBox = document.getElementById('error-message');
+      errorBox.textContent = message;
+      errorBox.style.display = 'block';
+      document.getElementById('loading').style.display = 'none';
+    }
+
+    function showPopup(message, isSuccess) {
+      const modal = document.getElementById('popup-modal');
+      const content = document.getElementById('popup-content');
+      const msg = document.getElementById('popup-message');
+
+      msg.textContent = message;
+      content.className = 'modal-content ' + (isSuccess ? 'success' : 'error');
+      modal.style.display = 'block';
+
+      if (isSuccess) {
+        setTimeout(() => {
+          window.location.href = '/home';
+        }, 2000);
+      }
+    }
+
+    function closePopup() {
+      document.getElementById('popup-modal').style.display = 'none';
+    }
+
+    function confirmSend() {
+      document.getElementById('loading').style.display = 'block';
+      const buttons = document.querySelectorAll('button');
+      buttons.forEach(button => button.disabled = true);
+
+      const formData = {
+        account_no: document.getElementById('account').textContent,
+        receivers_name: document.getElementById('receiver').textContent,
+        amount_in_bdt: document.getElementById('amount-bdt').textContent,
+        amount_in_selected_country: document.getElementById('amount-foreign').textContent,
+        country: document.getElementById('country').textContent,
+        user_id: "{{ user_id }}",
+        trx_id: document.getElementById('trx-id').value
+      };
+
+      fetch('/confirm_send_money', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded',
+        },
+        body: new URLSearchParams(formData)
+      })
+      .then(response => response.json())
+      .then(data => {
+        buttons.forEach(button => button.disabled = false);
+        document.getElementById('loading').style.display = 'none';
+
+        if (data.status === 'success') {
+          showPopup(data.message, true);
+        } else {
+          showPopup(data.message || 'Error processing your transaction', false);
+        }
+      })
+      .catch(error => {
+        buttons.forEach(button => button.disabled = false);
+        document.getElementById('loading').style.display = 'none';
+        console.error('Error:', error);
+        showPopup('Network error. Please try again later.', false);
+      });
+    }
+  </script>
+
+</body>
+</html>
