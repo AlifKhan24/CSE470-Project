@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Send Now - Mobile Banking</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      font-family: playfair display;
+    }
+
+    body {
+      background-image: url('https://i.postimg.cc/VvfSv5Zw/send-money-button-3198511.webp');
+      background-size: cover;
+      background-position: center;
+      background-attachment: fixed;
+      min-height: 100vh;
+      color: #aac5ea;
+    }
+
+    .navbar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 15px 20px;
+      background-color: #0f2749;
+    }
+
+    .logo-btn {
+      width: 120px;
+      height: 50px;
+      background-color: transparent;
+      border: none;
+      cursor: pointer;
+      background-image: url('https://i.postimg.cc/nLt7Kfnk/Mobile-Banking-Logo.png');
+      background-size: contain;
+      background-repeat: no-repeat;
+      background-position: center;
+    }
+
+    .form-container {
+      background-color: #0f2749;
+      color: #aac5ea;
+      width: 100%;
+      max-width: 400px;
+      margin: 60px auto;
+      padding: 30px 40px;
+      border-radius: 10px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.5);
+    }
+
+    .form-container h2 {
+      text-align: center;
+      margin-bottom: 30px;
+    }
+
+    .form-group {
+      margin-bottom: 20px;
+    }
+
+    .form-group label {
+      display: block;
+      margin-bottom: 6px;
+    }
+
+    .form-group input {
+      width: 100%;
+      padding: 12px;
+      border: none;
+      border-radius: 4px;
+      background-color: #f3f3f3;
+      font-size: 16px;
+    }
+
+    .form-group input:focus {
+      background-color: #e8e8e8;
+      outline: none;
+    }
+
+    .checkbox-group {
+      display: flex;
+      align-items: center;
+      margin-bottom: 20px;
+    }
+
+    .checkbox-group input[type="checkbox"] {
+      margin-right: 10px;
+    }
+
+    .button-group {
+      margin-top: 10px;
+    }
+
+    .button-group button {
+      width: 100%;
+      padding: 12px;
+      border: none;
+      border-radius: 4px;
+      background-color: #aac5ea;
+      color: black;
+      font-weight: bold;
+      cursor: pointer;
+      font-size: 18px;
+    }
+
+    .button-group button:hover {
+      background-color: #ddd;
+    }
+
+    .back-button-container {
+      display: flex;
+      justify-content: center;
+      margin-top: 20px;
+    }
+
+    .back-button {
+      background-color: #ff4444;
+      color: white;
+      border: none;
+      border-radius: 25px;
+      padding: 12px 30px;
+      font-size: 16px;
+      font-weight: bold;
+      cursor: pointer;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+      transition: background-color 0.3s;
+    }
+
+    .back-button:hover {
+      background-color: #cc0000;
+    }
+
+    /* Popup Modal Styles */
+    #popupModal {
+      display: none;
+      position: fixed;
+      z-index: 9999;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background-color: white;
+      color: black;
+      padding: 25px 30px;
+      border-radius: 12px;
+      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
+      text-align: center;
+      font-size: 18px;
+    }
+
+    #popupModal button {
+      padding: 10px 20px;
+      margin: 10px;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+
+    #popupModal .cancel-btn {
+      background-color: #888;
+      color: white;
+    }
+
+    #popupModal .home-btn {
+      background-color: #0f2749;
+      color: white;
+    }
+
+  </style>
+</head>
+<body>
+
+  <!-- Navigation Bar -->
+  <nav class="navbar">
+    <button class="logo-btn" id="logoBtn"></button>
+  </nav>
+
+  <!-- Main Form -->
+  <div class="form-container">
+    <h2>Send Money Now</h2>
+
+    <div id="message" class="message {% if success %}success{% endif %}">
+      {{ error or success }}
+    </div>
+
+    <form id="sendMoneyForm" method="POST">
+      <div class="form-group">
+        <label for="recipient_phone">Recipient Phone Number</label>
+        <input type="text" id="recipient_phone" name="recipient_phone" placeholder="Enter Phone Number"
+              value="{{ prefill_phone or '' }}" required />
+      </div>
+
+      <div class="form-group">
+        <label for="recipient_name">Receiver’s Name</label>
+        <input type="text" id="recipient_name" name="recipient_name" placeholder="Enter Receiver's Name"
+              value="{{ prefill_name or '' }}" required />
+      </div>
+
+      <div class="form-group">
+        <label for="amount">Amount</label>
+        <input type="number" id="amount" name="amount" placeholder="Enter Amount" required />
+      </div>
+
+      <div class="checkbox-group">
+        <input type="checkbox" id="save_info" name="save_info">
+        <label for="save_info">Save Account No. and Name For Future Transactions</label>
+      </div>
+
+      <div class="button-group">
+        <button type="submit">Proceed</button>
+      </div>
+    </form>
+
+    <div class="back-button-container">
+      <button class="back-button" id="backBtn">Back</button>
+    </div>
+  </div>
+
+  <!-- Popup Modal -->
+  <div id="popupModal">
+    <p id="popupMessage"></p>
+    <div>
+      <button class="cancel-btn" onclick="window.location.href='/send_now'">Cancel</button>
+      <button class="home-btn" onclick="window.location.href='/home'">Home</button>
+    </div>
+  </div>
+
+  <script>
+    document.getElementById('logoBtn').addEventListener('click', function () {
+      window.location.href = "/home";
+    });
+
+    document.getElementById('backBtn').addEventListener('click', function () {
+      window.location.href = "/send_money";
+    });
+
+    document.addEventListener('DOMContentLoaded', function () {
+      const status = "{{ request.args.get('status', '') }}";
+      let message = "";
+
+      if (status === "success") {
+        message = "Money sent successfully!";
+        showPopup(message, true);
+      } else if (status === "insufficient_balance") {
+        message = "Insufficient Balance";
+        showPopup(message, false);
+      } else if (status === "limit_reached") {
+        message = "Transaction Limit Reached";
+        showPopup(message, false);
+      }
+    });
+
+    function showPopup(message, isSuccess) {
+      const popup = document.getElementById('popupModal');
+      const messageEl = document.getElementById('popupMessage');
+      messageEl.innerText = message;
+      popup.style.backgroundColor = isSuccess ? '#d4edda' : '#f8d7da';
+      messageEl.style.color = isSuccess ? '#155724' : '#721c24';
+      popup.style.display = 'block';
+    }
+  </script>
+
+</body>
+</html>
