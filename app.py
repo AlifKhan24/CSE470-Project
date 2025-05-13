@@ -508,3 +508,102 @@ def get_scheduled_transactions():
 ### Saifuddin Tanzil ###
 
 ### Subah Fatima Hasan ###
+
+
+
+
+
+
+
+#routes
+@app.route("/home")
+def home():
+    user_id = get_user_id_from_cookie()
+    if not user_id:
+        return redirect("/login")
+    with db.cursor() as cursor:
+        cursor.execute("SELECT * FROM user_profile WHERE user_id = %s", (user_id,))
+        user = cursor.fetchone()
+    if user:
+        return render_template("home.html", user=user)
+    else:
+        return "User not found", 404
+    
+@app.route("/")
+def homepage():
+    return render_template("landing.html")
+
+@app.route("/scheduled_transactions")
+def scheduled_transactions():
+    return render_template("scheduled_transactions.html")
+
+@app.route("/admin_home")
+def admin_home():
+    return render_template("admin_home.html")
+
+@app.route("/add_money")
+def add_money():
+    return render_template("add_money.html")
+
+@app.route("/investments")
+def investments():
+    return render_template("investments.html")
+
+@app.route("/send_money")
+def send_money():
+    return render_template("send_money.html")
+
+@app.route("/investment_confirmation.html")
+def investment_confirmation():
+    return render_template("investment_confirmation.html")
+
+@app.route("/utility")
+def utility():
+    return render_template("utility.html")
+
+@app.route("/payment")
+def payment():
+    return render_template("payment.html")
+
+@app.route("/donations")
+def donations():
+    return render_template("donations.html")
+
+@app.route("/loan")
+def loan():
+    return render_template("loan.html")
+
+@app.route("/faq")
+def faq():
+    return render_template("faq.html")
+
+@app.route("/send_money_int")
+def send_money_int():
+    return render_template("send_money_int.html")
+
+@app.route("/int_money_confirm")
+def int_money_confirm():
+    return render_template("int_money_confirm.html")
+
+@app.route("/investmentconfirmation")
+def investmentconfirmation():
+    return render_template("investmentconfirmation.html")
+
+
+@app.route("/admin_req_submitted")
+def admin_req_submitted():
+    return render_template("admin_req_submitted.html")
+
+@app.route('/loyalty_points', methods=['GET'])
+def loyalty_points_page():
+    return render_template('loyalty_points.html')
+
+
+if __name__ == "__main__":
+    if os.environ.get("WERKZEUG_RUN_MAIN") == "true":
+        threading.Thread(target=process_scheduled_transactions, daemon=True).start()
+        threading.Thread(target=process_matured_investments, daemon=True).start()
+    app.run(port=8000, debug=True)
+
+
+
