@@ -504,6 +504,432 @@ def get_scheduled_transactions():
 ### Ahnaf Ashraf Jameel ###
 
 ### Raduan Ahmed Opy ###
+#Payment
+#gas bill
+@app.route("/gas_bill", methods=["GET", "POST"])
+def gas_bill():
+    user_id = get_user_id_from_cookie()
+    if not user_id:
+        return redirect("/login")
+
+    if request.method == "GET":
+        return render_template("gas_bill.html")
+
+    name = request.form.get("userName")
+    meter_no = request.form.get("meterNo")
+    amount = float(request.form.get("amount"))
+    month = request.form.get("month")
+
+    installment_option = request.form.get("installmentMonths")
+    is_installment = request.form.get("installmentOption") == "on"
+    is_multi_source = request.form.get("multipleSourceOption") == "on"
+
+    mobile_percentage = int(request.form.get("mobileSlider", 0)) if is_multi_source else 100
+    mobile_share = round((mobile_percentage / 100) * amount, 2)
+
+
+    with db.cursor() as cursor:
+        cursor.execute("SELECT balance, transaction_limit FROM user_profile WHERE user_id = %s", (user_id,))
+        user = cursor.fetchone()
+
+        if not user:
+            return redirect("/login")
+
+        balance = float(user['balance'])
+        trx_limit = int(user['transaction_limit'])
+
+        # INSTALLMENT 
+        if is_installment and installment_option:
+            months = int(installment_option)
+            part1 = round(amount / months, 2)
+
+            if balance < part1:
+                return render_template("gas_bill.html", popup="insufficient")
+            if part1 > trx_limit:
+                return render_template("gas_bill.html", popup="limit")
+
+            cursor.execute("UPDATE user_profile SET balance = balance - %s WHERE user_id = %s", (part1, user_id))
+
+            due_1_date = (datetime.now() + timedelta(days=30)).date()
+            due_2_date = (datetime.now() + timedelta(days=60)).date() if months == 3 else None
+
+            cursor.execute("""
+                INSERT INTO pay_gas 
+                (user_id, name, meter_no, amount, month, installment, due_1, due_2, status) 
+                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, 'pending')
+            """, (
+                user_id, name, meter_no, amount, month, months, due_1_date, due_2_date
+            ))
+
+            cursor.execute("UPDATE user_profile SET points = points + %s WHERE user_id = %s", (int(amount // 100), user_id))
+
+            alert = f"Gas Bill payment in {months} installments for Meter ID {meter_no} of {amount} Taka Successful!"
+            cursor.execute("INSERT INTO notifications (user_id, alerts) VALUES (%s, %s)", (user_id, alert))
+
+            cursor.execute("""
+                INSERT INTO history (user_id, type, trx_id, account, amount)
+                VALUES (%s, %s, %s, %s, %s)
+            """, (user_id, "Gas Bill Payment in Installment", "N/A", meter_no, -amount))
+
+            db.commit()
+            return render_template("gas_bill.html", popup="success")
+
+        # MULTI-SOURCE 
+        elif is_multi_source:
+            if balance < mobile_share:
+                return render_template("gas_bill.html", popup="insufficient")
+            if mobile_share > trx_limit:
+                return render_template("gas_bill.html", popup="limit")
+
+            cursor.execute("UPDATE user_profile SET balance = balance - %s WHERE user_id = %s", (mobile_share, user_id))
+
+            cursor.execute("""
+                INSERT INTO pay_gas (user_id, name, meter_no, amount, month, multi_source)
+                VALUES (%s, %s, %s, %s, %s, 'yes')
+            """, (user_id, name, meter_no, amount, month))
+
+            cursor.execute("UPDATE user_profile SET points = points + %s WHERE user_id = %s", (int(amount // 100), user_id))
+
+            alert = f"Bill payment for Gas ID {meter_no} of {amount} Taka Paid from multiple sources!"
+            cursor.execute("INSERT INTO notifications (user_id, alerts) VALUES (%s, %s)", (user_id, alert))
+
+            cursor.execute("""
+                INSERT INTO history (user_id, type, trx_id, account, amount)
+                VALUES (%s, %s, %s, %s, %s)
+            """, (user_id, "Multi Source Gas Bill Payment", "N/A", meter_no, -amount))
+
+            db.commit()
+            return render_template("gas_bill.html", popup="success")
+
+        # STANDARD PAYMENT
+        else:
+            if balance < amount:
+                return render_template("gas_bill.html", popup="insufficient")
+            if amount > trx_limit:
+                return render_template("gas_bill.html", popup="limit")
+
+            cursor.execute("UPDATE user_profile SET balance = balance - %s WHERE user_id = %s", (amount, user_id))
+
+            cursor.execute("""
+                INSERT INTO pay_gas (user_id, name, meter_no, amount, month)
+                VALUES (%s, %s, %s, %s, %s)
+            """, (user_id, name, meter_no, amount, month))
+
+            cursor.execute("UPDATE user_profile SET points = points + %s WHERE user_id = %s", (int(amount // 100), user_id))
+
+            alert = f"Bill payment for Gas ID {meter_no} of {amount} Taka Successful!"
+            cursor.execute("INSERT INTO notifications (user_id, alerts) VALUES (%s, %s)", (user_id, alert))
+
+            cursor.execute("""
+                INSERT INTO history (user_id, type, trx_id, account, amount)
+                VALUES (%s, %s, %s, %s, %s)
+            """, (user_id, "Gas Bill Payment", "N/A", meter_no, -amount))
+
+            # Cashback Logic
+            cursor.execute("SELECT tier FROM user_profile WHERE user_id = %s", (user_id,))
+            user_tier = cursor.fetchone()
+            if user_tier:
+                tier = user_tier['tier'].lower()  # Make it lowercase to match rewards table
+                cursor.execute("SELECT cashback_rate FROM rewards WHERE tier = %s", (tier,))
+                reward = cursor.fetchone()
+                if reward:
+                    cashback_amount = (float(reward['cashback_rate']) / 100) * amount
+                    cashback_amount = round(cashback_amount, 2)  # Round to 2 decimal places
+
+                    cursor.execute("UPDATE user_profile SET balance = balance + %s WHERE user_id = %s", (cashback_amount, user_id))
+
+                    #cashback history
+                    cursor.execute("""
+                        INSERT INTO history (user_id, type, trx_id, account, amount)
+                        VALUES (%s, %s, %s, %s, %s)
+                    """, (user_id, "Cashback", "N/A", "Gas Bill", cashback_amount))
+
+                    #cashback notification
+                    cursor.execute("INSERT INTO notifications (user_id, alerts) VALUES (%s, %s)",
+                                (user_id, f"Received {cashback_amount} cashback for Gas Bill Payment"))
+
+
+            db.commit()
+            return render_template("gas_bill.html", popup="success")
+
+#wifi bill
+@app.route("/wifi_bill", methods=["GET", "POST"])
+def wifi_bill():
+    user_id = get_user_id_from_cookie()
+    if not user_id:
+        return redirect("/login")
+
+    if request.method == "GET":
+        return render_template("wifi_bill.html")
+
+    name = request.form.get("userName")
+    wifi_id = request.form.get("meterNo")
+    amount = float(request.form.get("amount"))
+    month = request.form.get("month")
+
+    installment_option = request.form.get("installmentMonths")
+    is_installment = request.form.get("installmentOption") == "on"
+    is_multi_source = request.form.get("multipleSourceOption") == "on"
+
+    mobile_percentage = int(request.form.get("mobileSlider", 0)) if is_multi_source else 100
+    mobile_share = round((mobile_percentage / 100) * amount, 2)
+
+    with db.cursor() as cursor:
+        cursor.execute("SELECT balance, transaction_limit FROM user_profile WHERE user_id = %s", (user_id,))
+        user = cursor.fetchone()
+
+        if not user:
+            return redirect("/login")
+
+        balance = float(user['balance'])
+        trx_limit = int(user['transaction_limit'])
+
+        # INSTALLMENT 
+        if is_installment and installment_option:
+            months = int(installment_option)
+            part1 = round(amount / months, 2)
+
+            if balance < part1:
+                return render_template("wifi_bill.html", popup="insufficient")
+            if part1 > trx_limit:
+                return render_template("wifi_bill.html", popup="limit")
+
+            cursor.execute("UPDATE user_profile SET balance = balance - %s WHERE user_id = %s", (part1, user_id))
+
+            due_1_date = (datetime.now() + timedelta(days=30)).date()
+            due_2_date = (datetime.now() + timedelta(days=60)).date() if months == 3 else None
+
+            cursor.execute("""
+                INSERT INTO pay_wifi 
+                (user_id, name, wifi_id, amount, month, installment, due_1, due_2, status) 
+                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, 'pending')
+            """, (user_id, name, wifi_id, amount, month, months, due_1_date, due_2_date))
+
+            cursor.execute("UPDATE user_profile SET points = points + %s WHERE user_id = %s", (int(amount // 100), user_id))
+            alert = f"WiFi Bill payment in {months} installments for Meter ID {meter_no} of {amount} Taka Successful!"
+            cursor.execute("INSERT INTO notifications (user_id, alerts) VALUES (%s, %s)", (user_id, alert))
+            cursor.execute("""
+                INSERT INTO history (user_id, type, trx_id, account, amount)
+                VALUES (%s, %s, %s, %s, %s)
+            """, (user_id, "WiFi Bill Payment in Installment", "N/A", wifi_id, -amount))
+
+            db.commit()
+            return render_template("wifi_bill.html", popup="success")
+
+        # MULTI-SOURCE 
+        elif is_multi_source:
+            if balance < mobile_share:
+                return render_template("wifi_bill.html", popup="insufficient")
+            if mobile_share > trx_limit:
+                return render_template("wifi_bill.html", popup="limit")
+
+            cursor.execute("UPDATE user_profile SET balance = balance - %s WHERE user_id = %s", (mobile_share, user_id))
+            cursor.execute("""
+                INSERT INTO pay_wifi (user_id, name, wifi_id, amount, month, multi_source)
+                VALUES (%s, %s, %s, %s, %s, 'yes')
+            """, (user_id, name, wifi_id, amount, month))
+            cursor.execute("UPDATE user_profile SET points = points + %s WHERE user_id = %s", (int(amount // 100), user_id))
+            alert = f"Bill payment for WiFi ID {wifi_id} of {amount} Taka Paid from multiple sources!"
+            cursor.execute("INSERT INTO notifications (user_id, alerts) VALUES (%s, %s)", (user_id, alert))
+            cursor.execute("""
+                INSERT INTO history (user_id, type, trx_id, account, amount)
+                VALUES (%s, %s, %s, %s, %s)
+            """, (user_id, "Multi Source WiFi Bill Payment", "N/A", wifi_id, -amount))
+
+            db.commit()
+            return render_template("wifi_bill.html", popup="success")
+
+        # STANDARD PAYMENT
+        else:
+            if balance < amount:
+                return render_template("wifi_bill.html", popup="insufficient")
+            if amount > trx_limit:
+                return render_template("wifi_bill.html", popup="limit")
+
+            cursor.execute("UPDATE user_profile SET balance = balance - %s WHERE user_id = %s", (amount, user_id))
+            cursor.execute("""
+                INSERT INTO pay_wifi (user_id, name, wifi_id, amount, month)
+                VALUES (%s, %s, %s, %s, %s)
+            """, (user_id, name, wifi_id, amount, month))
+            cursor.execute("UPDATE user_profile SET points = points + %s WHERE user_id = %s", (int(amount // 100), user_id))
+            alert = f"Bill payment for WiFi ID {wifi_id} of {amount} Taka Successful!"
+            cursor.execute("INSERT INTO notifications (user_id, alerts) VALUES (%s, %s)", (user_id, alert))
+            cursor.execute("""
+                INSERT INTO history (user_id, type, trx_id, account, amount)
+                VALUES (%s, %s, %s, %s, %s)
+            """, (user_id, "WiFi Bill Payment", "N/A", wifi_id, -amount))
+            # Cashback Logic
+            cursor.execute("SELECT tier FROM user_profile WHERE user_id = %s", (user_id,))
+            user_tier = cursor.fetchone()
+            if user_tier:
+                tier = user_tier['tier'].lower()  # Make it lowercase to match rewards table
+                cursor.execute("SELECT cashback_rate FROM rewards WHERE tier = %s", (tier,))
+                reward = cursor.fetchone()
+                if reward:
+                    cashback_amount = (float(reward['cashback_rate']) / 100) * amount
+                    cashback_amount = round(cashback_amount, 2)  # Round to 2 decimal places
+
+                    cursor.execute("UPDATE user_profile SET balance = balance + %s WHERE user_id = %s", (cashback_amount, user_id))
+
+                    #cashback history
+                    cursor.execute("""
+                        INSERT INTO history (user_id, type, trx_id, account, amount)
+                        VALUES (%s, %s, %s, %s, %s)
+                    """, (user_id, "Cashback", "N/A", "WiFi Bill", cashback_amount))
+
+                    #cashback notification
+                    cursor.execute("INSERT INTO notifications (user_id, alerts) VALUES (%s, %s)",
+                                (user_id, f"Received {cashback_amount} cashback for Wifi Bill Payment"))
+
+            db.commit()
+            return render_template("wifi_bill.html", popup="success")
+
+#electricity bill
+@app.route("/electricity_bill", methods=["GET", "POST"])
+def electricity_bill():
+    user_id = get_user_id_from_cookie()
+    if not user_id:
+        return redirect("/login")
+
+    if request.method == "GET":
+        return render_template("electricity_bill.html")
+
+    name = request.form.get("userName")
+    meter_no = request.form.get("meterNo")
+    amount = float(request.form.get("amount"))
+    month = request.form.get("month")
+
+    installment_option = request.form.get("installmentMonths")
+    is_installment = request.form.get("installmentOption") == "on"
+    is_multi_source = request.form.get("multipleSourceOption") == "on"
+
+    mobile_percentage = int(request.form.get("mobileSlider", 0)) if is_multi_source else 100
+    mobile_share = round((mobile_percentage / 100) * amount, 2)
+
+    with db.cursor() as cursor:
+        cursor.execute("SELECT balance, transaction_limit FROM user_profile WHERE user_id = %s", (user_id,))
+        user = cursor.fetchone()
+
+        if not user:
+            return redirect("/login")
+
+        balance = float(user['balance'])
+        trx_limit = int(user['transaction_limit'])
+
+        # INSTALLMENT MODE
+        if is_installment and installment_option:
+            months = int(installment_option)
+            part1 = round(amount / months, 2)
+
+            if balance < part1:
+                return render_template("electricity_bill.html", popup="insufficient")
+            if part1 > trx_limit:
+                return render_template("electricity_bill.html", popup="limit")
+
+            cursor.execute("UPDATE user_profile SET balance = balance - %s WHERE user_id = %s", (part1, user_id))
+
+            due_1_date = (datetime.now() + timedelta(days=30)).date()
+            due_2_date = (datetime.now() + timedelta(days=60)).date() if months == 3 else None
+
+            cursor.execute("""
+                INSERT INTO pay_electricity 
+                (user_id, name, meter_no, amount, month, installment, due_1, due_2, status) 
+                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, 'pending')
+            """, (
+                user_id, name, meter_no, amount, month, months, due_1_date, due_2_date
+            ))
+            #points
+            cursor.execute("UPDATE user_profile SET points = points + %s WHERE user_id = %s", (int(amount // 100), user_id))
+            #Notification
+            alert = f"Electricity Bill payment in {months} installments for Meter ID {meter_no} of {amount} Taka Successful!"
+            cursor.execute("INSERT INTO notifications (user_id, alerts) VALUES (%s, %s)", (user_id, alert))
+            cursor.execute("""
+                INSERT INTO history (user_id, type, trx_id, account, amount)
+                VALUES (%s, %s, %s, %s, %s)
+            """, (user_id, "Electricity Bill Payment in Installment", "N/A", meter_no, -amount))
+
+            db.commit()
+            return render_template("electricity_bill.html", popup="success")
+
+
+        # MULTI-SOURCE MODE
+        elif is_multi_source:
+            if balance < mobile_share:
+                return render_template("electricity_bill.html", popup="insufficient")
+            if mobile_share > trx_limit:
+                return render_template("electricity_bill.html", popup="limit")
+
+            # Deduct the mobile portion
+            if mobile_share > 0:
+                cursor.execute(
+                    "UPDATE user_profile SET balance = balance - %s WHERE user_id = %s",
+                    (mobile_share, user_id)
+                )
+
+            cursor.execute("""
+                INSERT INTO pay_electricity (user_id, name, meter_no, amount, month, multi_source)
+                VALUES (%s, %s, %s, %s, %s, 'yes')
+            """, (user_id, name, meter_no, amount, month))
+            #points
+            cursor.execute("UPDATE user_profile SET points = points + %s WHERE user_id = %s", (int(amount // 100), user_id))
+            #Notification
+            alert = f"Bill payment for Meter ID {meter_no} of {amount} Taka Paid from multiple sources!"
+            cursor.execute("INSERT INTO notifications (user_id, alerts) VALUES (%s, %s)", (user_id, alert))
+            cursor.execute("""
+                INSERT INTO history (user_id, type, trx_id, account, amount)
+                VALUES (%s, %s, %s, %s, %s)
+            """, (user_id, "Multi Source Electricity Bill Payment", "N/A", meter_no, -amount))
+
+            db.commit()
+            return render_template("electricity_bill.html", popup="success")
+
+
+        # STANDARD PAYMENT
+        else:
+            if balance < amount:
+                return render_template("electricity_bill.html", popup="insufficient")
+            if amount > trx_limit:
+                return render_template("electricity_bill.html", popup="limit")
+
+            cursor.execute("UPDATE user_profile SET balance = balance - %s WHERE user_id = %s", (amount, user_id))
+            cursor.execute("""
+                INSERT INTO pay_electricity (user_id, name, meter_no, amount, month)
+                VALUES (%s, %s, %s, %s, %s)
+            """, (user_id, name, meter_no, amount, month)) 
+            #points
+            cursor.execute("UPDATE user_profile SET points = points + %s WHERE user_id = %s", (int(amount // 100), user_id))
+            #Notification
+            alert = f"Bill payment for Electricity Meter {meter_no} of {amount} Taka Successful!"
+            cursor.execute("INSERT INTO notifications (user_id, alerts) VALUES (%s, %s)", (user_id, alert))
+            cursor.execute("""
+                INSERT INTO history (user_id, type, trx_id, account, amount)
+                VALUES (%s, %s, %s, %s, %s)
+            """, (user_id, "Electricity Bill Payment", "N/A", meter_no, -amount))
+            # Cashback Logic
+            cursor.execute("SELECT tier FROM user_profile WHERE user_id = %s", (user_id,))
+            user_tier = cursor.fetchone()
+            if user_tier:
+                tier = user_tier['tier'].lower()  # Make it lowercase to match rewards table
+                cursor.execute("SELECT cashback_rate FROM rewards WHERE tier = %s", (tier,))
+                reward = cursor.fetchone()
+                if reward:
+                    cashback_amount = (float(reward['cashback_rate']) / 100) * amount
+                    cashback_amount = round(cashback_amount, 2)  # Round to 2 decimal places
+
+                    cursor.execute("UPDATE user_profile SET balance = balance + %s WHERE user_id = %s", (cashback_amount, user_id))
+
+                    #cashback history
+                    cursor.execute("""
+                        INSERT INTO history (user_id, type, trx_id, account, amount)
+                        VALUES (%s, %s, %s, %s, %s)
+                    """, (user_id, "Cashback", "N/A", "Electricity Bill", cashback_amount))
+
+                    #cashback notification
+                    cursor.execute("INSERT INTO notifications (user_id, alerts) VALUES (%s, %s)",
+                                (user_id, f"Received {cashback_amount} cashback for Electricity Bill Payment"))
+
+            db.commit()
+            return render_template("electricity_bill.html", popup="success")
 
 ### Saifuddin Tanzil ###
 
