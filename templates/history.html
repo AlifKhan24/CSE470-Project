@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>History</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: playfair display;
+    }
+
+    body {
+      background-image: url('https://i.postimg.cc/jdqvrz2q/vyhb.avif');
+      background-size: cover;
+      background-position: center;
+      background-attachment: fixed;
+      min-height: 100vh;
+      color: #333;
+      padding: 40px 20px;
+    }
+    .search-bar {
+      width: 100%;
+      padding: 10px 15px;
+      margin-bottom: 20px;
+      border-radius: 6px;
+      border: 1px solid #ccc;
+      font-size: 16px;
+    }
+
+    .navbar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 15px 20px;
+      background-color: #0f2749;
+      margin: -40px -20px 30px -20px;
+    }
+
+    .logo-btn {
+      width: 120px;
+      height: 40px;
+      background-color: transparent;
+      border: none;
+      cursor: pointer;
+      background-image: url('https://i.postimg.cc/nLt7Kfnk/Mobile-Banking-Logo.png');
+      background-size: contain;
+      background-repeat: no-repeat;
+      background-position: center;
+    }
+
+    .container {
+      max-width: 1100px;
+      margin: 0 auto;
+      background-color: rgba(255, 255, 255, 0.95);
+      border-radius: 12px;
+      padding: 30px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+    }
+
+    h2 {
+      text-align: center;
+      margin-bottom: 25px;
+      color: #0f2749;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-bottom: 30px;
+    }
+
+    th, td {
+      padding: 12px 10px;
+      border: 1px solid #ccc;
+      text-align: left;
+    }
+
+    th {
+      background-color: #aac5ea;
+      color: #000;
+    }
+
+    .cancel-button {
+      background-color: #c0392b;
+      color: white;
+      border: none;
+      border-radius: 6px;
+      padding: 8px 14px;
+      cursor: pointer;
+      font-weight: bold;
+      transition: background-color 0.3s;
+    }
+
+    .cancel-button:hover {
+      background-color: #922b21;
+    }
+
+    .cancelled {
+      background-color: #bdc3c7;
+      color: #444;
+      cursor: not-allowed;
+    }
+
+    .no-history {
+      text-align: center;
+      font-size: 18px;
+      color: #444;
+      margin-top: 20px;
+    }
+
+    .back-button {
+      display: flex;
+      justify-content: center;
+      margin-top: 40px;
+    }
+
+    .back-button button {
+      padding: 10px 20px;
+      background-color: #cc0000;
+      color: white;
+      border: none;
+      border-radius: 6px;
+      font-weight: bold;
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+
+  <nav class="navbar">
+    <button class="logo-btn" onclick="location.href='/home'"></button>
+  </nav>
+
+  <div class="container">
+    <h2>Transaction History</h2>
+    <input type="text" id="searchInput" class="search-bar" placeholder="Search transactions..." onkeyup="filterTable()" />
+
+    {% if history_records %}
+    <table>
+      <thead>
+        <tr>
+          <th>Type</th>
+          <th>Transaction ID</th>
+          <th>Account/To</th>
+          <th>Time</th>
+          <th>Amount</th>
+          <th>Action</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for record in history_records %}
+        <tr>
+          <td>{{ record.type }}</td>
+          <td>{{ record.trx_id }}</td>
+          <td>{{ record.account }}</td>
+          <td>{{ record.time }}</td>
+          <td>{{ record.amount }}</td>
+          <td>
+            {% if record.type.lower() in ['send money', 'international money transfer'] %}
+              <button class="cancel-button" onclick="requestCancel(this)">Request Cancellation</button>
+            {% else %}
+              ---
+            {% endif %}
+          </td>
+          
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    {% else %}
+    <div class="no-history">No Transaction History Found</div>
+    {% endif %}
+
+    <div class="back-button">
+      <button onclick="goBack()">Back</button>
+    </div>
+  </div>
+
+  <script>
+    function filterTable() {
+      const input = document.getElementById("searchInput");
+      const filter = input.value.toLowerCase();
+      const rows = document.querySelectorAll("tbody tr");
+
+      rows.forEach(row => {
+        const cells = row.querySelectorAll("td");
+        const match = Array.from(cells).some(cell =>
+          cell.textContent.toLowerCase().includes(filter)
+        );
+        row.style.display = match ? "" : "none";
+      });
+    }
+
+    function requestCancel(button) {
+      const row = button.closest("tr");
+      const trxId = row.children[1].textContent.trim();
+  
+      fetch(`/cancel_transaction/${trxId}`, {
+        method: "POST"
+      })
+      .then(res => res.json())
+      .then(data => {
+        console.log("Cancel response:", data);
+        if (data.status === "success" || data.status === "exists") {
+          button.innerText = "Requested";
+          button.disabled = true;
+          button.classList.add("cancelled");
+        } else {
+          alert(data.message || "Cancellation failed.");
+        }
+      })
+      .catch(err => {
+        console.error("Request failed", err);
+        alert("Server error.");
+      });
+    }
+
+    function goBack() {
+      window.history.back();
+    }
+  </script>
+  
+
+</body>
+</html>
