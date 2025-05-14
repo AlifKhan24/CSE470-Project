@@ -502,6 +502,319 @@ def get_scheduled_transactions():
 
 
 ### Ahnaf Ashraf Jameel ###
+#Investment
+@app.route("/invest")
+def invest_page():
+    with db.cursor() as cursor:
+        cursor.execute("SELECT investment_id, name, roi FROM investment_ads")
+        investments = cursor.fetchall()
+    return render_template("investments.html", investments=investments)
+
+@app.route("/api/get-investment-options")
+def get_investment_options():
+    try:
+        with db.cursor() as cursor:
+            cursor.execute("SELECT name, roi FROM investment_ads")
+            investments = cursor.fetchall()
+        return jsonify(investments)
+    except Exception as e:
+        print("Error fetching investment options:", e)
+        return jsonify([]), 500
+
+@app.route("/api/submit-investment", methods=["POST"])
+def submit_investment():
+    user_id = get_user_id_from_cookie()
+    if not user_id:
+        return jsonify({"success": False, "message": "User not logged in"}), 401
+    try:
+        data = request.get_json()
+        investment_name = data.get("option")  # This is the name sent from frontend
+        amount = float(data.get("amount", 0))
+        period = int(data.get("months", 1))
+        if not investment_name or amount <= 0 or not (1 <= period <= 12):
+            return jsonify({"success": False, "message": "Invalid input"}), 400
+        with db.cursor() as cursor:
+            cursor.execute("SELECT investment_id, roi FROM investment_ads WHERE name = %s", (investment_name,))
+            investment = cursor.fetchone()
+            if not investment:
+                return jsonify({"success": False, "message": "Investment option not found"}), 404
+            investment_id = investment["investment_id"]
+            roi = float(investment["roi"])
+            #return amount
+            return_amount = round(amount + (amount * (roi / 100) * period), 2)
+            trx_id = ''.join(random.choices(string.ascii_uppercase + string.digits, k=12))
+            start_date = date.today()  
+            end_date = start_date + timedelta(days=period * 30)
+
+            cursor.execute("""
+                INSERT INTO investment_user (
+                    trx_id, user_id, investment_id, amount, period, start_date, end_date, return_amount
+                ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
+            """, (
+                trx_id, user_id, investment_id, amount, period, start_date, end_date, return_amount
+            ))
+            db.commit()
+            time.sleep(0.5)
+        return jsonify({"success": True, "redirect": "/investment_confirmation"})
+    except Exception as e:
+        print("Error during investment submission:", e)
+        return jsonify({"success": False, "message": "Server error"}), 500
+
+@app.route("/api/get-latest-investment")
+def get_latest_investment():
+    user_id = get_user_id_from_cookie()
+    if not user_id:
+        return jsonify({"success": False, "message": "User not logged in"}), 401
+    try:
+        user_id = int(user_id)
+        with db.cursor() as cursor:
+            cursor.execute("""
+                SELECT iu.trx_id, ia.name, iu.return_amount, iu.period
+                FROM investment_user iu
+                JOIN investment_ads ia ON iu.investment_id = ia.investment_id
+                WHERE iu.user_id = %s AND iu.status = 'inactive'
+                ORDER BY iu.id DESC
+                LIMIT 1
+            """, (user_id,))
+
+
+            investment = cursor.fetchone()
+            print("Investment query result:", investment)
+            if not investment:
+                return jsonify({"success": False, "message": "No pending investment found"}), 404
+            investment['return_amount'] = float(investment['return_amount'])
+            return jsonify({"success": True, **investment})
+    except Exception as e:
+        print("Error loading investment:", e)
+        return jsonify({"success": False, "message": "Server error"}), 500
+
+@app.route("/api/confirm-investment", methods=["POST"])
+def confirm_investment():
+    user_id = get_user_id_from_cookie()
+    if not user_id:
+        return jsonify({"success": False, "message": "Not logged in"}), 401
+    try:
+        user_id = int(user_id)  
+        with db.cursor() as cursor:
+            cursor.execute("""
+                SELECT iu.trx_id, ia.name, iu.amount, iu.return_amount, iu.period, iu.end_date
+                FROM investment_user iu
+                JOIN investment_ads ia ON iu.investment_id = ia.investment_id
+                WHERE iu.user_id = %s AND iu.status = 'inactive'
+                ORDER BY iu.id DESC
+                LIMIT 1
+            """, (user_id,))
+
+
+            investment = cursor.fetchone()
+            if not investment:
+                return jsonify({"success": False, "message": "No inactive investment"}), 404
+            amount = investment['amount']
+            return_amount = investment['return_amount']
+            trx_id = investment['trx_id']
+            end_date = investment['end_date']
+            name = investment['name']
+            period = investment['period']
+            cursor.execute("SELECT balance FROM user_profile WHERE user_id = %s", (user_id,))
+            user = cursor.fetchone()
+            if not user or user['balance'] < amount:
+                return jsonify({"success": False, "message": "Insufficient balance"})
+            cursor.execute("""
+                UPDATE user_profile SET balance = balance - %s WHERE user_id = %s
+            """, (amount, user_id))
+            cursor.execute("""
+                UPDATE investment_user SET status = 'active' WHERE trx_id = %s
+            """, (trx_id,))
+            #Notification
+            cursor.execute("""
+                INSERT INTO notifications (user_id, alerts)
+                VALUES (%s, %s)
+            """, (user_id, f"Successfully invested {amount} Taka on {name} for {period} months."))
+            cursor.execute("""
+                INSERT INTO history (user_id, type, trx_id, account, amount)
+                VALUES (%s, %s, %s, %s, %s)
+            """, (user_id, "Investment", trx_id, name, -amount))
+
+            db.commit()
+            #invest period tracker
+            def release_return():
+                now = datetime.now().date()
+                wait_seconds = (end_date - now).days * 86400
+                sleep(max(0, wait_seconds))
+                try:
+                    with db.cursor() as c:
+                        c.execute("UPDATE user_profile SET balance = balance + %s WHERE user_id = %s",
+                                  (return_amount, user_id))
+                        db.commit()
+                except Exception as e:
+                    print("Error adding return amount later:", e)
+            threading.Thread(target=release_return).start()
+            return jsonify({"success": True})
+    except Exception as e:
+        db.rollback()
+        print("Error in investment confirmation:", e)
+        return jsonify({"success": False, "message": "Server error"}), 500
+
+@app.route("/current_investments")
+def current_investments():
+    user_id = get_user_id_from_cookie()
+    if not user_id:
+        return redirect("/login")
+
+    investments = []
+    try:
+        with db.cursor() as cursor:
+            query = """
+                SELECT iu.trx_id, ia.name, ia.roi, iu.amount, iu.period, iu.start_date, iu.end_date, iu.return_amount
+                FROM investment_user iu
+                JOIN investment_ads ia ON iu.investment_id = ia.investment_id
+                WHERE iu.user_id = %s AND iu.status = 'active'
+                ORDER BY iu.start_date DESC
+            """
+
+            cursor.execute(query, (user_id,))
+            rows = cursor.fetchall()
+
+
+            for row in rows:
+                investments.append({
+                    'trx_id': row['trx_id'],
+                    'name': row['name'],
+                    'roi': row['roi'],
+                    'amount': row['amount'],
+                    'period': row['period'],
+                    'start_date': row['start_date'],
+                    'end_date': row['end_date'],
+                    'return_amount': row['return_amount']
+                })
+
+    except Exception as e:
+        import traceback
+        print("Error loading investments:")
+        traceback.print_exc()
+
+    return render_template("current_investments.html", investments=investments)
+
+def process_matured_investments():
+    while True:
+        today = date.today() 
+        # today = date(2025, 9, 1) 
+        
+        try:
+            db = pymysql.connect(
+                host="localhost",
+                user="root",
+                password="@Mysql",
+                database="mobilebanking",
+                cursorclass=pymysql.cursors.DictCursor
+            )
+
+            with db.cursor() as cursor:
+                cursor.execute("""
+                    SELECT * FROM investment_user
+                    WHERE end_date <= %s AND status = 'active'
+                """, (today,))
+                matured_investments = cursor.fetchall()
+
+                for investment in matured_investments:
+                    user_id = investment["user_id"]
+                    return_amount = Decimal(investment["return_amount"])
+                    investment_id = investment["investment_id"]  # Ensure this is correct
+                    amount = investment["amount"]
+                    # Add return to user balance
+                    cursor.execute("""
+                        UPDATE user_profile
+                        SET balance = balance + %s
+                        WHERE user_id = %s
+                    """, (return_amount, user_id))
+
+                    # Mark investment as completed
+                    cursor.execute("""
+                        UPDATE investment_user
+                        SET status = 'completed'
+                        WHERE investment_id = %s
+                    """, (investment_id,))
+
+                    # Get the investment name from investment_ads
+                    cursor.execute("""
+                        SELECT name FROM investment_ads
+                        WHERE investment_id = %s
+                    """, (investment_id,))
+                    result = cursor.fetchone()
+
+                    if result:
+                        investment_name = result["name"]
+                    else:
+                        investment_name = "Unknown Investment"
+
+                    # Notify the user
+                    alert = f"Your investment in {investment_name} of {amount} Taka has matured. Your return of {return_amount} Taka has been added to your balance."
+                    cursor.execute("""
+                        INSERT INTO notifications (user_id, alerts)
+                        VALUES (%s, %s)
+                    """, (user_id, alert))
+
+                db.commit()
+
+        except Exception as e:
+            logging.error("Error processing matured investments:\n%s", traceback.format_exc())
+            try:
+                db.rollback()  # Rollback if an error occurs
+            except Exception as rollback_err:
+                logging.error("Error during rollback: %s", rollback_err)
+
+        finally:
+            try:
+                db.close()  # Close the connection
+            except Exception as close_err:
+                logging.error("Error closing database connection: %s", close_err)
+
+        sleep(60)  # wait before checking again
+
+
+
+#gift card
+@app.route("/gift_card", methods=["GET", "POST"])
+def gift_card():
+    user_id = get_user_id_from_cookie()
+    if not user_id:
+        return redirect("/login")
+    if request.method == "GET":
+        return render_template("gift_card.html")
+    card_code = request.form.get("giftcode", "").strip().upper()
+    try:
+        with db.cursor() as cursor:
+            #Checking if card exists and is active
+            cursor.execute(
+                "SELECT amount FROM gift_cards WHERE card_no = %s AND status = 'active'",
+                (card_code,)
+            )
+            gift_card = cursor.fetchone()
+            if not gift_card:
+                return render_template("gift_card.html", error="Invalid redeem code")
+            amount = gift_card["amount"]
+            cursor.execute(
+                "UPDATE user_profile SET balance = balance + %s WHERE user_id = %s",
+                (amount, user_id)
+            )
+            #update card status
+            cursor.execute(
+                "UPDATE gift_cards SET status = 'used' WHERE card_no = %s",
+                (card_code,)
+            )
+            #notification
+            cursor.execute(
+                "INSERT INTO notifications (user_id, alerts) VALUES (%s, %s)",
+                (user_id, f"Gift card of {amount} Taka Redeemed!")
+            )
+            db.commit()
+            return render_template("gift_card.html", success="Code Redeemed!!!")
+    except Exception as e:
+        db.rollback()
+        return render_template("gift_card.html", error="An error occurred during redemption.")
+
+
+
 
 ### Raduan Ahmed Opy ###
 #Payment
