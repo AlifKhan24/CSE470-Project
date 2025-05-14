@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Admin Request Submitted</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: playfair display;
+    }
+
+    body {
+      background-color: #e5e5dc;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+    }
+
+    .container {
+      background-color: #0f1c2e;
+      color: white;
+      padding: 40px 30px;
+      border-radius: 10px;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+      text-align: center;
+      max-width: 500px;
+      width: 90%;
+    }
+
+    h1 {
+      font-size: 24px;
+      margin-bottom: 30px;
+      color: #3e75c2;
+    }
+
+    p {
+      font-size: 16px;
+      margin-bottom: 40px;
+    }
+
+    .home-btn {
+      background-color: #3e75c2;
+      color: white;
+      border: none;
+      padding: 12px 24px;
+      font-size: 16px;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: background-color 0.3s ease;
+    }
+
+    .home-btn:hover {
+      background-color: #305e9e;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Request Submitted</h1>
+    <p>Thank You For Request, We will get back to you soon!</p>
+    <button class="home-btn" onclick="goHome()">Home</button>
+  </div>
+
+  <script>
+    function goHome() {
+      window.location.href = '/';
+    }
+  </script>
+</body>
+</html>
