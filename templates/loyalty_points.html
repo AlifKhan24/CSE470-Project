@@ -1,0 +1,365 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Loyalty Points</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: 'Playfair Display', serif;
+    }
+
+    body {
+      background-image: url('https://i.postimg.cc/wTfKKx6P/re.webp');
+      background-size: cover;
+      background-position: center;
+      background-attachment: fixed;
+      min-height: 100vh;
+      color: #333;
+      padding: 40px 20px;
+    }
+
+    .navbar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 15px 20px;
+      background-color: #0f2749;
+      margin: -40px -20px 30px -20px;
+    }
+
+    .logo-btn {
+      width: 120px;
+      height: 40px;
+      background: url('https://i.postimg.cc/nLt7Kfnk/Mobile-Banking-Logo.png') center/contain no-repeat;
+      border: none;
+      cursor: pointer;
+    }
+
+    .container {
+      max-width: 1100px;
+      margin: 0 auto;
+      background: rgba(255, 255, 255, 0.95);
+      border-radius: 12px;
+      padding: 30px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+      text-align: center;
+    }
+
+    .tier-section {
+      margin-bottom: 30px;
+    }
+
+    .tier-medal {
+      font-size: 80px;
+    }
+
+    .glow {
+      animation: glow 1.5s ease-in-out infinite alternate;
+    }
+
+    @keyframes glow {
+      from {
+        text-shadow: 0 0 5px #ffda77, 0 0 10px #ffda77, 0 0 15px #ffda77;
+      }
+      to {
+        text-shadow: 0 0 10px #ffd700, 0 0 20px #ffd700, 0 0 30px #ffd700;
+      }
+    }
+
+    .progress-bar {
+      background: #ddd;
+      border-radius: 10px;
+      overflow: hidden;
+      height: 20px;
+      margin-top: 10px;
+    }
+
+    .progress {
+      background: #4CAF50;
+      height: 100%;
+      width: 0;
+      transition: width 0.5s;
+    }
+
+    .benefits {
+      margin-top: 30px;
+    }
+
+    .benefit-box {
+      background: #f1f5f9;
+      padding: 15px;
+      border-radius: 8px;
+      margin-bottom: 15px;
+    }
+
+    .next-benefit {
+      background: #fff5d7;
+      border: 2px dashed #ffc107;
+      color: #333;
+    }
+
+    .tabs {
+      margin-top: 20px;
+      position: relative;
+      display: inline-block;
+    }
+
+    .tab-hover {
+      background: #0f2749;
+      color: white;
+      padding: 10px 20px;
+      border-radius: 8px;
+      cursor: pointer;
+    }
+
+    .tab-content {
+      display: none;
+      position: absolute;
+      background: #fff;
+      min-width: 250px;
+      padding: 15px;
+      border-radius: 8px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+      top: 110%;
+      left: 50%;
+      transform: translateX(-50%);
+      text-align: left;
+      z-index: 10;
+    }
+
+    .tabs:hover .tab-content {
+      display: block;
+    }
+
+    .shop-button, .reward-button {
+      margin: 10px;
+      padding: 10px 20px;
+      font-size: 16px;
+      cursor: pointer;
+      border: none;
+      border-radius: 8px;
+      color: white;
+    }
+
+    .shop-button {
+      background-color: #2196F3;
+    }
+
+    .reward-button {
+      background-color: #FF5722;
+    }
+
+    .popup {
+      display: none;
+      position: fixed;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      background: rgba(0,0,0,0.6);
+      justify-content: center;
+      align-items: center;
+      z-index: 1000;
+    }
+
+    .popup-content {
+      background: white;
+      padding: 30px;
+      border-radius: 10px;
+      text-align: center;
+    }
+
+    .back-button {
+      display: flex;
+      justify-content: center;
+      margin-top: 40px;
+    }
+
+    .back-button button {
+      padding: 10px 20px;
+      background-color: #cc0000;
+      color: white;
+      border: none;
+      border-radius: 6px;
+      font-weight: bold;
+      cursor: pointer;
+    }
+
+
+    .reward-button:disabled {
+      opacity: 0.6;
+    }
+
+  </style>
+</head>
+<body>
+
+<nav class="navbar">
+  <button class="logo-btn" onclick="location.href='/home'"></button>
+</nav>
+
+<div class="container">
+  <div class="tier-section">
+    <div class="tier-medal" id="tierMedal">🥉</div>
+    <h2 id="currentTier">Bronze Tier</h2>
+    <p id="pointsStatus">Points: 50 / 100</p>
+    <div class="progress-bar">
+      <div class="progress" id="progressBar"></div>
+    </div>
+  </div>
+
+  <div class="benefits">
+    <div class="benefit-box">
+      <h3>Current Tier Benefits</h3>
+      <p id="currentBenefits">0.3% Cashback and Weekly Chance to Win up to 30 Points</p>
+    </div>
+    <div class="benefit-box next-benefit">
+      <h3>Next Tier Benefits</h3>
+      <p id="nextBenefits">0.5% Cashback and Weekly Chance to Win up to 60 Points</p>
+    </div>
+  </div>
+
+  <div class="tabs">
+    <div class="tab-hover">View All Tier Perks</div>
+    <div class="tab-content">
+      <ul style="list-style: none; padding: 0;">
+        <li><b>Bronze:</b> 0.3% Cashback, up to 30 Points Weekly</li>
+        <li><b>Silver:</b> 0.5% Cashback, up to 60 Points Weekly</li>
+        <li><b>Gold:</b> 0.7% Cashback, up to 80 Points Weekly</li>
+        <li><b>Platinum:</b> 0.9% Cashback, up to 100 Points Weekly</li>
+        <li><b>Diamond:</b> 1.5% Cashback, up to 200 Points Weekly</li>
+      </ul>
+    </div>
+  </div>
+
+  <div style="margin-top: 30px;">
+    <!-- <button class="shop-button">🛒 Shop</button> -->
+    <button class="reward-button" onclick="claimWeeklyReward()">Claim Weekly Reward</button>
+  </div>
+</div>
+<div class="back-button">
+  <button onclick="goBack()">Back</button>
+</div>
+
+<div class="popup" id="popup">
+  <div class="popup-content">
+    <h2>Congratulations!</h2>
+    <p id="rewardPointsText">You won X points!</p>
+    <button onclick="closePopup()">Close</button>
+  </div>
+
+
+</div>
+
+<script>
+  let currentPoints = 0;
+  let lastTier = "";
+
+
+
+  const tiers = [
+    { name: "Bronze", min: 0, max: 99, cashback: "0.3%", rewardMax: 30, medal: "🥉" },
+    { name: "Silver", min: 100, max: 299, cashback: "0.5%", rewardMax: 60, medal: "🥈" },
+    { name: "Gold", min: 300, max: 699, cashback: "0.7%", rewardMax: 80, medal: "🥇" },
+    { name: "Platinum", min: 700, max: 1199, cashback: "0.9%", rewardMax: 100, medal: "🏆" },
+    { name: "Diamond", min: 1200, max: Infinity, cashback: "1.5%", rewardMax: 200, medal: "💎" }
+  ];
+
+  async function fetchPoints() {
+    try {
+      const response = await fetch('/api/loyalty_points');
+      const data = await response.json();
+      currentPoints = data.points;
+      updateUI();
+    } catch (error) {
+      console.error('Failed to fetch loyalty points:', error);
+    }
+  }
+
+  function updateUI() {
+    let currentTier, nextTier;
+    for (let i = 0; i < tiers.length; i++) {
+      if (currentPoints >= tiers[i].min && currentPoints <= tiers[i].max) {
+        currentTier = tiers[i];
+        nextTier = tiers[i+1];
+        break;
+      }
+    }
+
+    document.getElementById("currentTier").innerText = currentTier.name + " Tier";
+    document.getElementById("tierMedal").innerText = currentTier.medal;
+    document.getElementById("currentBenefits").innerText = `${currentTier.cashback} Cashback and Weekly Chance to Win up to ${currentTier.rewardMax} Points`;
+
+    if (nextTier) {
+      document.getElementById("nextBenefits").innerText = `${nextTier.cashback} Cashback and Weekly Chance to Win up to ${nextTier.rewardMax} Points`;
+      document.getElementById("pointsStatus").innerText = `Points: ${currentPoints} / ${nextTier.min} (Need ${nextTier.min - currentPoints} more)`;
+      document.getElementById("progressBar").style.width = `${((currentPoints - currentTier.min) / (nextTier.min - currentTier.min)) * 100}%`;
+    } else {
+      document.getElementById("nextBenefits").innerText = `You are at the highest tier!`;
+      document.getElementById("pointsStatus").innerText = `Points: ${currentPoints}`;
+      document.getElementById("progressBar").style.width = "100%";
+    }
+
+    if (currentTier.name !== lastTier) {
+      document.getElementById("tierMedal").classList.add("glow");
+      setTimeout(() => {
+        document.getElementById("tierMedal").classList.remove("glow");
+      }, 3000);
+      lastTier = currentTier.name;
+    }
+  }
+
+  async function claimWeeklyReward() {
+    let userTier = tiers.find(tier => currentPoints >= tier.min && currentPoints <= tier.max);
+    let maxReward = userTier.rewardMax;
+    let rewardPoints = Math.floor(Math.random() * maxReward) + 1;
+
+    document.getElementById("rewardPointsText").innerText = `You won ${rewardPoints} points!`;
+    document.getElementById("popup").style.display = "flex";
+
+    currentPoints += rewardPoints;
+    updateUI();
+
+    try {
+      const response = await fetch('/loyalty_points', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ points: currentPoints }),
+      });
+
+      if (!response.ok) throw new Error('Failed to update points in database');
+      console.log('Points updated successfully!');
+    } catch (error) {
+      console.error(error);
+    }
+  }
+
+  function closePopup() {
+    document.getElementById("popup").style.display = "none";
+  }
+
+  // Fetch points on page load
+  fetchPoints();
+  function goBack() {
+      window.history.back();
+    }
+
+
+  document.addEventListener('DOMContentLoaded', () => {
+    const rewardButton = document.querySelector('.reward-button');
+    const today = new Date().getDay(); // 5 means Friday (0 is Sunday)
+
+    if (today !== 5) {
+      rewardButton.disabled = true;
+      rewardButton.style.backgroundColor = '#aaa';
+      rewardButton.style.cursor = 'not-allowed';
+      rewardButton.title = 'Weekly rewards can only be claimed on Fridays';
+    }
+  });
+
+</script>
+
+</body>
+</html>
