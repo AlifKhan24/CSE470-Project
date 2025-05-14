@@ -1973,10 +1973,136 @@ def download_statements():
 
 ### Subah Fatima Hasan ###
 
+#favourite accounts
+@app.route("/favourite_accounts", methods=["GET", "POST"])
+def favourite_accounts():
+    user_id = get_user_id_from_cookie()
+    if not user_id:
+        return redirect("/login")
+    search_query = request.args.get("search", "").strip()
+    saved_contacts = []
+    try:
+        cursor = db.cursor() 
+        if search_query:
+            cursor.execute("""
+                SELECT * FROM saved_details
+                WHERE user_id = %s AND (name LIKE %s OR phone LIKE %s)
+            """, (user_id, f"%{search_query}%", f"%{search_query}%"))
+        else:
+            cursor.execute("SELECT * FROM saved_details WHERE user_id = %s", (user_id,))       
+        saved_contacts = cursor.fetchall()
+    except Exception as e:
+        print("Error fetching saved contacts:", e)
+    finally:
+        cursor.close()
+    return render_template("favourite_accounts.html", saved_contacts=saved_contacts)
+
+@app.route("/delete_contact", methods=["POST"])
+def delete_contact():
+    phone = request.form["phone"]
+    user_id = request.cookies.get("user_id")    
+    if not user_id:
+        return redirect("/login")  
+    try:
+        with db.cursor() as cursor:
+            # Delete contact
+            cursor.execute("DELETE FROM saved_details WHERE phone = %s AND user_id = %s", (phone, user_id))
+            db.commit()
+            return redirect("/favourite_accounts")
+    except Exception as e:
+        return redirect("/favourite_accounts")
 
 
+# User Suspend
+@app.route('/user_suspend', methods=['GET', 'POST'])
+def user_suspend():
+    users = []
+    selected_user = None
+    search_query = ''
+
+    if request.method == 'POST':
+        print("POST request received")
+        form_data = request.form
+        print("Form data:", form_data)
+
+        search_query = form_data.get('search_query') or form_data.get('selected_phone')
+        print("Search Query:", search_query)
+
+        if search_query:
+            with db.cursor() as cursor:
+                query = """
+                    SELECT * FROM user_profile
+                    WHERE phone_number = %s
+                    OR first_name LIKE %s
+                    OR last_name LIKE %s
+                    OR nid = %s
+                """
+                cursor.execute(query, (search_query, f"%{search_query}%", f"%{search_query}%", search_query))
+                users = cursor.fetchall()
+
+                if users:
+                    selected_user = users[0]
+                    print("User found:", selected_user)
+
+                    suspend_key = f"status_{selected_user['phone_number']}"
+                    if suspend_key in form_data:
+                        new_status = form_data[suspend_key]
+                        if new_status:
+                            update_query = "UPDATE user_profile SET status = %s WHERE phone_number = %s"
+                            cursor.execute(update_query, (new_status, selected_user['phone_number']))
+                            db.commit()
+                            print(f"User {selected_user['phone_number']} status updated to {new_status}")
+
+                            cursor.execute("SELECT * FROM user_profile WHERE phone_number = %s", (selected_user['phone_number'],))
+                            updated_user = cursor.fetchone()
+                            if updated_user:
+                                selected_user = updated_user
+
+    return render_template('user_suspend.html', users=users, selected_user=selected_user, search_query=search_query)
 
 
+#Request Money
+@app.route("/request_money", methods=["GET", "POST"])
+def request_money():
+    if request.method == "GET":
+        return render_template("request_money.html")
+
+    phone = request.form.get("phone")
+    amount = request.form.get("amount")
+
+    user_id = get_user_id_from_cookie()
+    if not user_id:
+        return redirect("/login")
+
+    try:
+        connection = get_db_connection()
+        with connection.cursor() as cursor:
+            # Get current user's phone number
+            cursor.execute("SELECT phone_number FROM user_profile WHERE user_id = %s", (user_id,))
+            current_user = cursor.fetchone()
+            if not current_user:
+                return redirect("/login")
+            current_phone = current_user['phone_number']
+
+            # Check if entered phone number exists
+            cursor.execute("SELECT user_id FROM user_profile WHERE phone_number = %s", (phone,))
+            receiver = cursor.fetchone()
+            if not receiver:
+                return redirect("/request_money?status=not_found")
+
+            receiver_id = receiver['user_id']
+            message = f"{current_phone} requested {amount} Taka"
+
+            # Insert notification
+            cursor.execute(
+                "INSERT INTO notifications (user_id, alerts) VALUES (%s, %s)",
+                (receiver_id, message)
+            )
+            connection.commit()
+            return redirect("/request_money?status=success")
+    except Exception as e:
+        traceback.print_exc()
+        return redirect("/request_money?status=error")
 
 
 #routes
