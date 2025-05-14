@@ -1,0 +1,326 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Add Money - Mobile Banking</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      font-family: playfair display;
+    }
+
+    body {
+      background-color: #f5f5f5;
+      color: #333;
+      background-image: url('https://i.postimg.cc/Kv4bqB28/ca.jpg');
+      background-size: cover;
+      background-position: center;
+      background-repeat: no-repeat;
+    }
+
+    body::after {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(255, 255, 255, 0.85);
+      z-index: -1;
+    }
+
+    .navbar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 1rem 2rem;
+      background-color: #0f2749;
+    }
+
+    .logo-btn {
+      width: 120px;
+      height: 40px;
+      background: url('https://i.postimg.cc/nLt7Kfnk/Mobile-Banking-Logo.png') center/contain no-repeat;
+      border: none;
+      cursor: pointer;
+    }
+
+    .page-title {
+      font-size: 36px;
+      font-weight: bold;
+      margin: 20px;
+    }
+
+    .description {
+      font-size: 20px;
+      color: #666;
+      margin-left: 20px;
+      margin-bottom: 30px;
+    }
+
+    .input-section {
+      margin-left: 20px;
+    }
+
+    .input-group {
+      margin-bottom: 15px;
+    }
+
+    .input-label {
+      display: block;
+      font-size: 14px;
+      color: #666;
+      margin-bottom: 5px;
+      margin-left: 20px;
+    }
+
+    .input-field {
+      width: 50%;
+      padding: 15px;
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      font-size: 16px;
+      margin-left: 20px;
+    }
+
+    .proceed-btn, .back-btn {
+      width: 50%;
+      padding: 15px;
+      border: none;
+      border-radius: 8px;
+      font-size: 16px;
+      font-weight: bold;
+      cursor: pointer;
+      margin-left: 35px;
+      margin-top: 20px;
+    }
+
+    .proceed-btn {
+      background-color: #4CAF50;
+      color: white;
+    }
+
+    .back-btn {
+      background-color: #f5f5f5;
+      color: #333;
+      border: 1px solid #ddd;
+    }
+
+    .message {
+      margin: 20px;
+      padding: 15px;
+      border-radius: 8px;
+      font-weight: bold;
+      width: 50%;
+      margin-left: 20px;
+    }
+
+    .error {
+      background-color: #f8d7da;
+      color: #721c24;
+    }
+
+    .success {
+      background-color: #d4edda;
+      color: #155724;
+    }
+  </style>
+</head>
+<body>
+  <nav class="navbar">
+    <button class="logo-btn" onclick="goHome()"></button>
+  </nav>
+
+  <h1 class="page-title">Add Money</h1>
+  <p class="description">Add money in easy secure steps. Fast and easy way to add money to your account securely.</p>
+
+  {% if error %}
+    <div class="message error">{{ error }}</div>
+  {% elif success %}
+    <div class="message success">Money added successfully!</div>
+  {% endif %}
+
+  <form method="POST">
+    <div class="input-section">
+      <div class="input-group">
+        <label class="input-label" for="cardNo">Card No</label>
+        <input type="text" name="cardNo" id="cardNo" class="input-field" placeholder="Enter card number" required>
+      </div>
+
+      <div class="input-group">
+        <label class="input-label" for="amount">Enter Amount</label>
+        <input type="text" name="amount" id="amount" class="input-field" placeholder="Enter amount" required>
+      </div>
+
+      <div class="input-group">
+        <label class="input-label" for="expiry">Expiry Date</label>
+        <input type="text" name="expiry" id="expiry" class="input-field" placeholder="MM/YY" required pattern="(0[1-9]|1[0-2])\/\d{2}" title="Enter in MM/YY format">
+      </div>
+
+      <div class="input-group">
+        <label class="input-label" for="cvc">CVC Number</label>
+        <input type="text" name="cvc" id="cvc" class="input-field" placeholder="3-digit CVC" required pattern="\d{3}" title="Enter a 3-digit CVC">
+      </div>
+
+      <div class="input-group">
+        <label class="input-label" for="cardholderName">Cardholder's Name</label>
+        <input type="text" name="cardholderName" id="cardholderName" class="input-field" placeholder="Enter cardholder's name" required>
+      </div>
+    </div>
+
+    <div id="card-preview" style="width: 50%; height: 180px; background: #0f2749; color: white; border-radius: 12px; padding: 20px; margin: 20px;">
+      <div id="preview-number" style="font-size: 18px; letter-spacing: 2px;">0000 0000 0000 0000</div>
+      <div id="preview-name" style="margin-top: 10px; font-size: 14px;">Cardholder's Name</div>
+      <div style="margin-top: 30px; font-size: 14px;">
+        <span id="preview-expiry">MM/YY</span>
+        <span style="float: right;" id="preview-cvc">CVC</span>
+      </div>
+    </div>
+
+    <button type="submit" class="proceed-btn" disabled>Proceed</button>
+    <button type="button" class="back-btn" onclick="goBack()">Back</button>
+  </form>
+
+  <script>
+    function goHome() {
+      window.location.href = "/home";
+    }
+
+    function goBack() {
+      window.location.href = "/add_money";
+    }
+
+    const cardNoInput = document.getElementById("cardNo");
+    const amountInput = document.getElementById("amount");
+    const expiryInput = document.getElementById("expiry");
+    const cvcInput = document.getElementById("cvc");
+    const cardholderNameInput = document.getElementById("cardholderName");
+    const proceedBtn = document.querySelector(".proceed-btn");
+
+    const previewNumber = document.getElementById("preview-number");
+    const previewExpiry = document.getElementById("preview-expiry");
+    const previewCvc = document.getElementById("preview-cvc");
+    const previewName = document.getElementById("preview-name");
+
+    const cardIcon = document.createElement("img");
+    cardIcon.id = "card-icon";
+    cardIcon.style.height = "30px";
+    cardIcon.style.marginLeft = "10px";
+    cardIcon.style.verticalAlign = "middle";
+    cardIcon.style.display = "none";
+    cardNoInput.parentNode.appendChild(cardIcon);
+
+    function validateCardType(cardDigits) {
+      return /^4\d{15}$/.test(cardDigits) || // Visa
+             /^5[1-5]\d{14}$/.test(cardDigits) || // MasterCard (old)
+             /^2(2[2-9]|[3-6][0-9]|7[01]|720)\d{12}$/.test(cardDigits); // MasterCard (new range)
+    }
+
+    function isFutureExpiry(expiry) {
+      if (!/^(0[1-9]|1[0-2])\/\d{2}$/.test(expiry)) return false;
+      const [month, year] = expiry.split("/").map(Number);
+      const now = new Date();
+      const currentYear = now.getFullYear() % 100;
+      const currentMonth = now.getMonth() + 1;
+      return year > currentYear || (year === currentYear && month >= currentMonth);
+    }
+
+    function updateProceedButton() {
+      const cardDigits = cardNoInput.value.replace(/\D/g, "");
+      const expiryValue = expiryInput.value;
+      const isValidCard = validateCardType(cardDigits);
+      const isValidExpiry = isFutureExpiry(expiryValue);
+      proceedBtn.disabled = !(isValidCard && isValidExpiry);
+      proceedBtn.style.opacity = proceedBtn.disabled ? "0.6" : "1";
+      proceedBtn.style.cursor = proceedBtn.disabled ? "not-allowed" : "pointer";
+    }
+
+    cardNoInput.addEventListener("input", function () {
+      let digits = this.value.replace(/\D/g, "").substring(0, 16);
+      this.value = digits.replace(/(.{4})/g, "$1 ").trim();
+      previewNumber.textContent = this.value || "0000 0000 0000 0000";
+
+      if (digits.startsWith("4")) {
+        cardIcon.src = "https://upload.wikimedia.org/wikipedia/commons/4/41/Visa_Logo.png";
+        cardIcon.style.display = "inline";
+      } else if (/^5[1-5]/.test(digits) || /^2(2[2-9]|[3-6]|7[01])/.test(digits)) {
+        cardIcon.src = "https://upload.wikimedia.org/wikipedia/commons/0/04/Mastercard-logo.png";
+        cardIcon.style.display = "inline";
+      } else {
+        cardIcon.style.display = "none";
+      }
+
+      updateProceedButton();
+    });
+
+    amountInput.addEventListener("input", function () {
+      this.value = this.value.replace(/\D/g, "");
+    });
+
+    expiryInput.addEventListener("input", function () {
+      let value = this.value.replace(/[^0-9]/g, "");
+      if (value.length > 2) value = value.slice(0, 2) + "/" + value.slice(2);
+      if (value.length > 5) value = value.slice(0, 5);
+      this.value = value;
+      previewExpiry.textContent = value || "MM/YY";
+      updateProceedButton();
+    });
+
+    cvcInput.addEventListener("input", function () {
+      this.value = this.value.replace(/\D/g, "").slice(0, 3);
+      previewCvc.textContent = this.value || "CVC";
+    });
+
+    cardholderNameInput.addEventListener("input", function () {
+      previewName.textContent = this.value || "Cardholder's Name";
+    });
+
+    document.querySelector("form").addEventListener("submit", function (e) {
+      let hasError = false;
+      const expiry = expiryInput.value;
+      const [month, year] = expiry.split("/").map(Number);
+      const now = new Date();
+      const currentYear = now.getFullYear() % 100;
+      const currentMonth = now.getMonth() + 1;
+
+      document.querySelectorAll(".input-error").forEach(el => el.remove());
+
+      const showError = (input, message) => {
+        const errorEl = document.createElement("div");
+        errorEl.className = "input-error";
+        errorEl.style.color = "red";
+        errorEl.style.marginLeft = "20px";
+        errorEl.textContent = message;
+        input.parentNode.appendChild(errorEl);
+        hasError = true;
+      };
+
+      const cardDigits = cardNoInput.value.replace(/\s/g, "");
+      if (cardDigits.length !== 16 || !validateCardType(cardDigits)) {
+        showError(cardNoInput, "Enter a valid 16-digit Visa or MasterCard.");
+      }
+
+      if (!/^(0[1-9]|1[0-2])\/\d{2}$/.test(expiry)) {
+        showError(expiryInput, "Invalid expiry format. Use MM/YY.");
+      } else if (year < currentYear || (year === currentYear && month < currentMonth)) {
+        showError(expiryInput, "Card is expired.");
+      }
+
+      if (!/^\d{3}$/.test(cvcInput.value)) {
+        showError(cvcInput, "CVC must be 3 digits.");
+      }
+
+      if (!amountInput.value || isNaN(amountInput.value) || Number(amountInput.value) <= 0) {
+        showError(amountInput, "Please enter a valid amount.");
+      }
+
+      if (hasError) e.preventDefault();
+    });
+
+    updateProceedButton(); // Run on load
+  </script>
+</body>
+</html>
