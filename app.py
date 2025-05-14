@@ -1160,7 +1160,45 @@ def cancel_transaction(trx_id):
         print("Error:", e)
         db.rollback()
         return jsonify({"status": "error", "message": "Internal server error"})
+# New Admin Approvals
+@app.route("/approvals", methods=["GET", "POST"])
+def approvals():
+    if request.method == "GET":
+        try:
+            with db.cursor() as cursor:
+                cursor.execute("""
+                    SELECT first_name, last_name, email, nid, dob, phone_number
+                    FROM admin_profile
+                    WHERE status = 'unauthorized'
+                    ORDER BY admin_id ASC
+                    LIMIT 10
+                """)
+                pending_admins = cursor.fetchall()
+        except Exception as e:
+            print("Error fetching approvals:", e)
+            pending_admins = []
+        return render_template("admin_approvals.html", pending_admins=pending_admins)
 
+    elif request.method == "POST":
+        try:
+            phones = request.form.getlist("phones")
+            actions = request.form.getlist("actions")
+
+            updates = list(zip(phones, actions))
+            with db.cursor() as cursor:
+                for phone, action in updates:
+                    if action == "Approve":
+                        cursor.execute("UPDATE admin_profile SET status = 'authorized' WHERE phone_number = %s", (phone,))
+                    elif action == "Deny":
+                        cursor.execute("UPDATE admin_profile SET status = 'denied' WHERE phone_number = %s", (phone,))
+            db.commit()
+            flash("Approvals updated successfully!", "success")
+        except Exception as e:
+            print("Error processing approvals:", e)
+            flash("Something went wrong. Try again.", "error")
+
+        return redirect("/approvals")
+        
 ### Subah Fatima Hasan ###
 
 
