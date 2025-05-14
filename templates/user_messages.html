@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Messages</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: playfair display;
+    }
+
+    body {
+      background-color: #b2d2ee;
+      padding: 0;
+      margin: 0;
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+    }
+
+    .navbar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 15px 20px;
+      background-color: #0f2749;
+    }
+
+    .logo-btn {
+      width: 120px;
+      height: 40px;
+      background-color: transparent;
+      border: none;
+      cursor: pointer;
+      background-image: url('https://i.postimg.cc/nLt7Kfnk/Mobile-Banking-Logo.png');
+      background-size: contain;
+      background-repeat: no-repeat;
+      background-position: center;
+    }
+
+    .home-button {
+      padding: 8px 16px;
+      background-color: #aac5ea;
+      border: none;
+      border-radius: 6px;
+      font-weight: bold;
+      cursor: pointer;
+      color: #0f2749;
+    }
+
+    .chat-container {
+      flex: 1;
+      padding: 20px;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .message {
+      max-width: 60%;
+      padding: 10px 14px;
+      border-radius: 16px;
+      position: relative;
+      font-size: 15px;
+      line-height: 1.4;
+      word-wrap: break-word;
+    }
+
+    .user-message {
+      background-color: #dff3ff;
+      align-self: flex-end;
+    }
+
+    .admin-message {
+      background-color: #e6e6e6;
+      align-self: flex-start;
+    }
+
+    .timestamp {
+      font-size: 12px;
+      margin-top: 4px;
+      text-align: right;
+      color: #666;
+    }
+
+    .input-area {
+      display: flex;
+      padding: 15px 20px;
+      background-color: white;
+      border-top: 1px solid #ccc;
+    }
+
+    .input-area input {
+      flex: 1;
+      padding: 10px;
+      border-radius: 20px;
+      border: 1px solid #ccc;
+      margin-right: 10px;
+    }
+
+    .send-btn {
+      padding: 10px 18px;
+      background-color: #0f2749;
+      color: white;
+      border: none;
+      border-radius: 20px;
+      font-weight: bold;
+      cursor: pointer;
+    }
+
+    .send-btn:hover {
+      background-color: #18365e;
+    }
+  </style>
+</head>
+<body>
+
+  <nav class="navbar">
+    <button class="logo-btn" onclick="location.href='/home'"></button>
+    <button class="home-button" onclick="location.href='/home'">Home</button>
+  </nav>
+
+  <div class="chat-container" id="chatBox">
+    {% for msg in messages %}
+      {% if msg.role == 'user' %}
+        <div class="message user-message">
+          {{ msg.message }}
+          <div class="timestamp">{{ msg.timestamp }}</div>
+        </div>
+      {% else %}
+        <div class="message admin-message">
+          {{ msg.message }}
+          <div class="timestamp">{{ msg.timestamp }}</div>
+        </div>
+      {% endif %}
+    {% endfor %}
+  </div>
+
+  <form class="input-area" method="POST" action="/user_messages">
+    <input type="text" name="message" placeholder="Type your message..." required />
+    <button type="submit" class="send-btn">Send</button>
+  </form>
+
+</body>
+</html>

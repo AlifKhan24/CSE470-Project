@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Admin Inbox</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: playfair display;
+    }
+
+    body {
+      background-color: #f0f2f5;
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+    }
+
+    .navbar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 15px 20px;
+      background-color: #0f2749;
+    }
+
+    .logo-btn {
+      width: 120px;
+      height: 40px;
+      background-color: transparent;
+      border: none;
+      cursor: pointer;
+      background-image: url('https://i.postimg.cc/nLt7Kfnk/Mobile-Banking-Logo.png');
+      background-size: contain;
+      background-repeat: no-repeat;
+      background-position: center;
+    }
+
+    .home-button {
+      padding: 8px 16px;
+      background-color: #aac5ea;
+      border: none;
+      border-radius: 6px;
+      font-weight: bold;
+      cursor: pointer;
+      color: #0f2749;
+    }
+
+    .inbox-container {
+      padding: 20px;
+      flex: 1;
+      overflow-y: auto;
+      background-color: #fff;
+    }
+
+    .chat-preview {
+      background-color: #eef3f8;
+      border-radius: 10px;
+      padding: 12px 16px;
+      margin-bottom: 15px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+      cursor: pointer;
+      transition: background-color 0.2s;
+    }
+
+    .chat-preview:hover {
+      background-color: #dde9f3;
+    }
+
+    .user-title {
+      font-weight: bold;
+      color: #0f2749;
+      margin-bottom: 6px;
+    }
+
+    .message-snippet {
+      color: #444;
+      font-size: 14px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .unread-dot {
+        height: 10px;
+        width: 10px;
+        background-color: #007bff;
+        border-radius: 50%;
+        display: inline-block;
+        margin-left: 8px;
+    }
+
+  </style>
+</head>
+<body>
+
+  <nav class="navbar">
+    <button class="logo-btn" onclick="location.href='/admin_home'"></button>
+    <button class="home-button" onclick="location.href='/admin_home'">Home</button>
+  </nav>
+
+  <div class="inbox-container">
+    {% for convo in conversations %}
+        <div class="chat-preview" onclick="location.href='/admin_messages/{{ convo.user_id }}'">
+
+
+            <div class="user-title">
+                {{ convo.phone_number }}
+                {% if convo.has_unread %}
+                    <span class="unread-dot"></span>
+                {% endif %}
+            </div>
+            <div class="message-snippet">{{ convo.message }}</div>
+        </div>
+      
+    {% endfor %}
+  </div>
+
+</body>
+</html>
