@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Mobile Banking Home</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      font-family: playfair display;
+    }
+
+    body {
+      background-image: url('https://i.postimg.cc/k4zVhP2t/MB-Home.png');
+      background-size: cover;
+      background-position: center;
+      background-attachment: fixed;
+      background-color: #f5f5f5;
+      color: #fff;
+      min-height: 100vh;
+    }
+
+    .navbar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 15px 25px;
+      background-color: #0f2749;
+    }
+
+    .logo-btn {
+      width: 100px;
+      height: 40px;
+      background-color: transparent;
+      border: none;
+      cursor: pointer;
+      background-image: url('https://i.postimg.cc/nLt7Kfnk/Mobile-Banking-Logo.png');
+      background-size: contain;
+      background-repeat: no-repeat;
+      background-position: center;
+    }
+
+    .nav-right {
+      display: flex;
+      gap: 8px;
+    }
+
+    .nav-right button {
+      padding: 6px 10px;
+      font-size: 12px;
+      border: none;
+      border-radius: 5px;
+      background-color: #aac5ea;
+      color: #000;
+      font-weight: bold;
+      cursor: pointer;
+    }
+
+    .main-content {
+      padding: 20px;
+      margin-top: 20px;
+      display: flex;
+      flex-direction: column;
+      min-height: calc(100vh - 100px);
+    }
+
+    .button-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 25px;
+      margin-top: 10px;
+      flex-grow: 1;
+    }
+
+    .menu-button {
+      background-color: rgba(255, 255, 255, 0.9);
+      color: #333;
+      border: none;
+      border-radius: 8px;
+      padding: 8px 15px;
+      font-size: 14px;
+      font-weight: bold;
+      text-align: center;
+      cursor: pointer;
+      transition: transform 0.2s, box-shadow 0.2s;
+      box-shadow: 0 4px 8px #0f2749;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100px;
+      position: relative;
+      overflow: hidden;
+      text-decoration: none;
+    }
+
+    .menu-button::after {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background-color: #3e75c2;
+      background-size: contain;
+      background-position: center;
+      background-repeat: no-repeat;
+      opacity: 0.2;
+      z-index: 0;
+    }
+
+    .menu-button span {
+      position: relative;
+      z-index: 1;
+      text-shadow: 0 0 5px rgba(255, 255, 255, 0.8);
+    }
+
+    .menu-button:hover {
+      transform: translateY(-10px);
+      box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
+    }
+
+    .faq-button {
+      position: fixed;
+      bottom: 15px;
+      right: 15px;
+      padding: 8px 12px;
+      background-color: #aac5ea;
+      color: black;
+      font-weight: bold;
+      border: none;
+      border-radius: 15px;
+      cursor: pointer;
+      box-shadow: 0 4px 10px #0f2749;
+    }
+  </style>
+</head>
+<body>
+
+  <nav class="navbar">
+    <button class="logo-btn" id="logoBtn"></button>
+    <div class="nav-right">
+      <button id="profileBtn">Profile</button>
+      <button id="favBtn">Favourite Accounts</button>
+      <button id="notificationBtn">Notification</button>
+      <button id="historyBtn">History</button>
+      <button id="logoutBtn">Log out</button>
+    </div>
+  </nav>
+
+  <div class="main-content">
+    <div class="button-grid">
+      <!-- Correct link to send_money route -->
+      <a href="/send_money" class="menu-button" style="--bg-image: url('send.png')"><span>Send Money</span></a>
+      <a href="/add_money" class="menu-button" style="--bg-image: url('add.png')"><span>Add Money</span></a>
+      <a href="/utility" class="menu-button" style="--bg-image: url('bills.png')"><span>Payment</span></a>
+      <a href="/investments" class="menu-button" style="--bg-image: url('invest.png')"><span>Investments</span></a>
+      <a href="/gift_card" class="menu-button" style="--bg-image: url('gift.png')"><span>Gift Card</span></a>
+      <a href="/loan" class="menu-button" style="--bg-image: url('loan.png')"><span> Request Loan</span></a>
+      <a href="/request_money" class="menu-button" style="--bg-image: url('request.png')"><span>Request Money From User</span></a>
+    </div>
+  </div>
+
+  <button class="faq-button" id="faqBtn">FAQ</button>
+  <button class="faq-button" id="contactBtn" style="right: 90px;">Contact Us</button> <!-- NEW -->
+
+
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      document.getElementById('logoBtn').onclick = () => location.reload();
+      document.getElementById('profileBtn').onclick = () => window.location.href = "/profile";
+      document.getElementById('favBtn').onclick = () => window.location.href = "/favourite_accounts";
+      document.getElementById('notificationBtn').onclick = () => window.location.href = "/notifications";
+      document.getElementById('historyBtn').onclick = () => window.location.href = "/history";       // NEW
+      document.getElementById('logoutBtn').onclick = () => window.location.href = "/";
+      document.getElementById('faqBtn').onclick = () => window.location.href = "/faq";
+      document.getElementById('contactBtn').onclick = () => window.location.href = "/user_messages";    // NEW
+
+    });
+  </script>
+</body>
+</html>
