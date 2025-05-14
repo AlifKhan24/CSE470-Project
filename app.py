@@ -954,6 +954,94 @@ def history():
     return render_template("history.html", history_records=history_records)
 
 ### Saifuddin Tanzil ###
+#Add money
+#add money bank
+@app.route("/bank", methods=["GET", "POST"])
+def bank():
+    user_id = get_user_id_from_cookie()
+    if not user_id:
+        return render_template("login.html")   
+    if request.method == "GET":
+        return render_template("bank.html")  
+    account_no = request.form.get("accountNo")
+    amount = request.form.get("amount")
+    if not account_no or not amount:
+        return render_template("bank.html", error="Please fill in all fields.")
+    try:
+        amount = float(amount)
+        if amount <= 0:
+            raise ValueError("Amount must be positive")
+    except ValueError:
+        return render_template("bank.html", error="Invalid amount entered.")
+    try:
+        with db.cursor() as cursor:
+            trx_id = generate_unique_trx_id(cursor)
+            cursor.execute(""" 
+                INSERT INTO add_money_bank (user_id, acc_no, amount, trx_id)
+                VALUES (%s, %s, %s, %s)
+            """, (user_id, account_no, amount, trx_id))
+            cursor.execute("""
+                UPDATE user_profile SET balance = balance + %s WHERE user_id = %s
+            """, (amount, user_id))
+            #notification
+            cursor.execute("""
+                INSERT INTO notifications (user_id, alerts)
+                VALUES (%s, %s)
+            """, (user_id, f"Add money from Bank account {account_no} for Taka {amount:.2f} successful, Trx ID: {trx_id}"))
+            cursor.execute("""
+                INSERT INTO history (user_id, type, trx_id, account, amount)
+                VALUES (%s, %s, %s, %s, %s)
+            """, (user_id, "Add Money from Bank", trx_id, account_no, amount))
+
+            db.commit()
+        return render_template("bank.html", success=True)  
+    except Exception as e:
+        db.rollback()
+        return render_template("bank.html", error="Something went wrong. Please try again.")
+
+#add money card
+@app.route("/card", methods=["GET", "POST"])
+def card():
+    user_id = get_user_id_from_cookie()
+    if not user_id:
+        return render_template("login.html")  
+    if request.method == "GET":
+        return render_template("card.html")    
+    account_no = request.form.get("cardNo")
+    amount = request.form.get("amount")
+    if not account_no or not amount:
+        return render_template("card.html", error="Please fill in all fields.") 
+    try:
+        amount = float(amount)
+        if amount <= 0:
+            raise ValueError("Amount must be positive")
+    except ValueError:
+        return render_template("card.html", error="Invalid amount entered.")
+    try:
+        with db.cursor() as cursor:
+            trx_id = generate_unique_trx_id(cursor)
+            cursor.execute(""" 
+                INSERT INTO add_money_card (user_id, card_no, amount, trx_id)
+                VALUES (%s, %s, %s, %s)
+            """, (user_id, account_no, amount, trx_id))
+            cursor.execute("""
+                UPDATE user_profile SET balance = balance + %s WHERE user_id = %s
+            """, (amount, user_id))
+            #notification
+            cursor.execute("""
+                INSERT INTO notifications (user_id, alerts)
+                VALUES (%s, %s)
+            """, (user_id, f"Add money from card account {account_no} for Taka {amount:.2f} successful, Trx ID: {trx_id}"))
+            cursor.execute("""
+                INSERT INTO history (user_id, type, trx_id, account, amount)
+                VALUES (%s, %s, %s, %s, %s)
+            """, (user_id, "Add Money from Card", trx_id, account_no, amount))
+
+            db.commit()
+        return render_template("card.html", success=True) 
+    except Exception as e:
+        db.rollback()
+        return render_template("card.html", error="Something went wrong. Please try again.")
 
 ### Subah Fatima Hasan ###
 
