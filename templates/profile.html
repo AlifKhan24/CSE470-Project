@@ -1,0 +1,252 @@
+<!-- UPDATED PROFILE PAGE -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Profile - Mobile Banking</title>
+  <style>
+    body {
+      margin: 0;
+      font-family: playfair display;
+      background: url('https://i.postimg.cc/5NSFTp2V/4775334-19366.jpg');
+      background-size: cover;
+    }
+
+    .overlay {
+      background-color: none;
+      min-height: 100vh;
+      padding-bottom: 60px;
+    }
+
+    nav {
+      background-color: #0f2749;
+      padding: 10px 20px;
+      display: flex;
+      align-items: center;
+    }
+
+    nav img {
+      height: 40px;
+      cursor: pointer;
+    }
+
+    .container {
+      max-width: 900px;
+      margin: 30px auto;
+      background: #b2d2ee;
+      padding: 30px;
+      border-radius: 12px;
+      box-shadow: 0 0 20px rgba(0,0,0,0.1);
+    }
+
+    .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .header h2 {
+      margin: 0;
+    }
+
+    .date {
+      font-size: 14px;
+      color: gray;
+    }
+
+    .profile-info {
+      display: flex;
+      align-items: center;
+      margin-top: 30px;
+      gap: 20px;
+    }
+
+    .profile-info img {
+      width: 100px;
+      height: 100px;
+      border-radius: 50%;
+      object-fit: cover;
+    }
+
+    .profile-details h3 {
+      margin: 0;
+    }
+
+    .info-grid {
+      margin-top: 30px;
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 20px;
+    }
+
+    .info-grid .form-group {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .info-grid label {
+      font-weight: 500;
+      margin-bottom: 5px;
+    }
+
+    .info-grid input {
+      padding: 10px;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+      font-size: 14px;
+      background-color: #f9f9f9;
+    }
+
+    .loyalty-section {
+      margin-top: 30px;
+    }
+
+    .loyalty-section p {
+      font-weight: bold;
+    }
+
+    .loyalty-section button {
+      margin-top: 10px;
+      padding: 10px 15px;
+      background-color: #0f2749;
+      color: white;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+    }
+
+    .edit-btn {
+      background-color: #3d6fe3;
+      color: white;
+      border: none;
+      padding: 10px 20px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-weight: bold;
+    }
+
+    .back-button {
+      display: flex;
+      justify-content: center;
+      margin-top: 40px;
+    }
+
+    .back-button button {
+      padding: 10px 20px;
+      background-color: #cc0000;
+      color: white;
+      border: none;
+      border-radius: 6px;
+      font-weight: bold;
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="overlay">
+
+    <nav>
+      <img src="https://i.postimg.cc/nLt7Kfnk/Mobile-Banking-Logo.png" alt="Logo" onclick="goHome()" />
+      <div style="margin-left: auto; display: flex; gap: 8px;">
+        <button onclick="location.href='/set_limit'" class="edit-btn" style="padding: 6px 10px; font-size: 12px;">Set Transaction Limit</button>
+        <button onclick="location.href='/active_loans'" class="edit-btn" style="padding: 6px 10px; font-size: 12px;">Current Loans</button>
+        <button onclick="location.href='/pending_installments'" class="edit-btn" style="padding: 6px 10px; font-size: 12px;">Pending Installments</button>
+        <button onclick="location.href='/current_investments'" class="edit-btn" style="padding: 6px 10px; font-size: 12px;">Current Investments</button>
+        <button onclick="window.location.href='/download_statements'" class="edit-btn" style="padding: 6px 10px; font-size: 12px;">Download Statements</button>
+      </div>
+    </nav>
+
+    <div class="container">
+      <div class="header">
+        <div>
+          <h2>Welcome, <span id="username">User</span></h2>
+          <p class="date" id="datetime"></p>
+        </div>
+        <a href="/editprofile"><button class="edit-btn">Edit</button></a>
+      </div>
+
+      <div class="profile-info">
+        <img id="profilePic" src="/static/uploads/{{ profile.profilePic }}" alt="User Photo" />
+        <div class="profile-details">
+          <h3 id="name">User Name</h3>
+          <p id="phone">01XXXXXXXXX</p>
+          <p id="balance"></p>
+        </div>
+      </div>
+
+      <div class="info-grid">
+        <div class="form-group">
+          <label>First Name</label>
+          <input type="text" id="firstName" readonly>
+        </div>
+        <div class="form-group">
+          <label>Last Name</label>
+          <input type="text" id="lastName" readonly>
+        </div>
+        <div class="form-group">
+          <label>Date of Birth</label>
+          <input type="text" id="dob" readonly>
+        </div>
+        <div class="form-group">
+          <label>Email</label>
+          <input type="text" id="email" readonly>
+        </div>
+        <div class="form-group">
+          <label>NID</label>
+          <input type="text" id="nid" readonly>
+        </div>
+      </div>
+
+      <div class="loyalty-section">
+        <p>Loyalty Points: <span id="loyaltyPoints">0</span></p>
+        <button onclick="seeMore()">Click to See More</button>
+      </div>
+
+      <div class="back-button">
+        <button onclick="goBack()">Back</button>
+      </div>
+    </div>
+
+  </div>
+
+  <script>
+    function goHome() {
+      window.location.href = "/home";
+    }
+
+    function goBack() {
+      window.location.href = "/home";
+    }
+
+    function seeMore() {
+      window.location.href = "/loyalty_points";
+    }
+
+    function updateDateTime() {
+      const now = new Date();
+      const options = { weekday: 'short', year: 'numeric', month: 'long', day: 'numeric'};
+      document.getElementById('datetime').textContent = now.toLocaleDateString('en-GB', options);
+    }
+
+    setInterval(updateDateTime, 1000);
+    updateDateTime();
+
+    window.onload = function () {
+      const backendData = {{ profile | tojson }};
+      document.getElementById("username").textContent = backendData.username;
+      document.getElementById("name").textContent = backendData.name;
+      document.getElementById("phone").textContent = backendData.phone;
+      document.getElementById("balance").textContent = `${backendData.balance.toFixed(2)} Taka`;
+      document.getElementById("firstName").value = backendData.firstName;
+      document.getElementById("lastName").value = backendData.lastName;
+      document.getElementById("dob").value = backendData.dob;
+      document.getElementById("email").value = backendData.email;
+      document.getElementById("nid").value = backendData.nid;
+      document.getElementById("loyaltyPoints").textContent = backendData.loyaltyPoints;
+    };
+  </script>
+
+</body>
+</html>

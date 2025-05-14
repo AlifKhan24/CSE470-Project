@@ -1,0 +1,402 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Electricity Bill Payment</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      font-family: playfair display;
+      background: url('https://i.postimg.cc/25zfXnZY/5.jpg') no-repeat center center fixed;
+      background-size: cover;
+    }
+
+    nav {
+      background-color: #0f2749;
+      padding: 10px 20px;
+      display: flex;
+      align-items: center;
+    }
+
+    nav img {
+      height: 40px;
+      cursor: pointer;
+    }
+
+    h2 {
+      text-align: center;
+      color: #aac5ea;
+      margin-top: 20px;
+      font-size: 36px;
+    }
+
+    .main-container {
+      display: flex;
+      justify-content: center;
+      padding: 30px 20px;
+    }
+
+    .form-container {
+      background-color: #0f2749;
+      color: #aac5ea;
+      width: 400px;
+      padding: 30px;
+      border-radius: 10px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.5);
+    }
+
+    .form-group {
+      margin-bottom: 20px;
+    }
+
+    .form-group label {
+      display: block;
+      margin-bottom: 6px;
+    }
+
+    .form-group input,
+    .form-group select {
+      width: 100%;
+      padding: 10px;
+      border: none;
+      border-radius: 6px;
+    }
+
+    .checkboxes {
+      margin-bottom: 20px;
+    }
+
+    .installment-details,
+    .multiple-source-details {
+      background-color: #0f3c70;
+      border-radius: 10px;
+      padding: 15px;
+      margin-top: 15px;
+    }
+
+    .installment-info {
+      margin-top: 10px;
+      font-size: 14px;
+      color: #fff;
+    }
+
+    .slider-group {
+      margin-top: 15px;
+    }
+
+    .slider-group input[type="range"] {
+      width: 100%;
+    }
+
+    .slider-group input[type="number"] {
+      width: 100%;
+      padding: 8px;
+      margin-top: 5px;
+      border-radius: 5px;
+      border: none;
+    }
+
+    .button-group {
+      margin-top: 30px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .button-group button {
+      padding: 12px;
+      border: none;
+      border-radius: 6px;
+      background-color: #aac5ea;
+      color: black;
+      font-weight: bold;
+      cursor: pointer;
+      font-family:  playfair display;
+    }
+
+    .button-group button:hover {
+      background-color: #ddeaf7;
+    }
+
+    .popup {
+      display: none;
+      position: fixed;
+      z-index: 999;
+      left: 50%;
+      top: 30%;
+      transform: translate(-50%, -50%);
+      background: white;
+      padding: 30px;
+      border-radius: 10px;
+      box-shadow: 0 0 15px rgba(0,0,0,0.2);
+      text-align: center;
+      font-family:  playfair display;
+    }
+
+    .popup h3 {
+      margin-bottom: 20px;
+    }
+
+    .popup button {
+      padding: 10px 20px;
+      margin: 0 10px;
+      background: #4CAF50;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      font-family:  playfair display;
+    }
+
+    .popup .stay {
+      background: #888;
+    }
+  </style>
+</head>
+<body>
+
+<nav>
+  <img src="https://i.postimg.cc/nLt7Kfnk/Mobile-Banking-Logo.png" alt="Logo" onclick="goHome()">
+</nav>
+
+<h2>Electricity Bill Payment</h2>
+
+<div class="main-container">
+  <div class="form-container">
+    <form id="billForm" method="POST" action="/electricity_bill">
+      <div class="form-group">
+        <label for="meterNo">Meter Number</label>
+        <input type="number" id="meterNo" name="meterNo" required min="0" step="1">
+      </div>
+
+      <div class="form-group">
+        <label for="userName">User Name</label>
+        <input type="text" id="userName" name="userName" required>
+      </div>
+
+      <div class="form-group">
+        <label for="amount">Amount</label>
+        <input type="number" id="amount" name="amount" required min="0" step="1">
+      </div>
+
+      <div class="form-group">
+        <label for="month">Month</label>
+        <select id="month" name="month" required>
+          <option value="">-- Select Month --</option>
+          <option>January</option><option>February</option><option>March</option>
+          <option>April</option><option>May</option><option>June</option>
+          <option>July</option><option>August</option><option>September</option>
+          <option>October</option><option>November</option><option>December</option>
+        </select>
+      </div>
+
+      <!-- Inside the form, replace this section: -->
+      <div class="checkboxes">
+        <label>
+          <input type="checkbox" id="installmentOption" name="installmentOption" value="on" onclick="toggleOption('installment')">
+          Pay in Installments
+        </label><br>
+        <label>
+          <input type="checkbox" id="multipleSourceOption" name="multipleSourceOption" value="on" onclick="toggleOption('multiple')">
+          Pay in Multiple Source
+        </label>
+      </div>
+
+
+      <!-- Installments -->
+      <div id="installmentDetails" class="installment-details" style="display:none;">
+        <label>Select Installment Months:</label>
+        <select id="installmentMonths" name="installmentMonths" onchange="calculateInstallment()">
+          <option value="">-- Select --</option>
+          <option value="2">2 Months</option>
+          <option value="3">3 Months</option>
+        </select>
+        <label>Monthly Installment:</label>
+        <input type="text" id="monthlyInstallment" disabled>
+        <div class="installment-info" id="installmentInfo"></div>
+      </div>
+
+
+      <!-- Multiple Source -->
+      <div id="multipleSourceDetails" class="multiple-source-details" style="display:none;">
+        <label>Source Percentage Splits:</label>
+
+        <div class="slider-group">
+          <label>Mobile Banking: <span id="mobileValue">34%</span></label>
+          <input type="range" id="mobileSlider" name="mobileSlider" min="0" max="100" value="34" oninput="adjustSliders('mobile')">
+        </div>
+
+        <div class="slider-group">
+          <label>Bank Account: <span id="bankValue">33%</span></label>
+          <input type="range" id="bankSlider" min="0" max="100" value="33" oninput="adjustSliders('bank')">
+          <input type="number" id="bankAccount" name="bankAccount" placeholder="Bank Account No" min="0" step="1">
+          <div id="bankError" style="color: #ff6b6b; font-size: 12px; display: none;">Bank Account is required</div>
+
+        </div>
+
+        <div class="slider-group">
+          <label>Card: <span id="cardValue">33%</span></label>
+          <input type="range" id="cardSlider" min="0" max="100" value="33" oninput="adjustSliders('card')">
+          <input type="number" id="cardNumber" name="cardNumber" placeholder="Card Number" min="0" step="1">
+          <div id="cardError" style="color: #ff6b6b; font-size: 12px; display: none;">Card Number is required</div>
+
+        </div>
+      </div>
+
+      <div class="button-group">
+        <button type="submit">Pay</button>
+        <button type="button" onclick="window.history.back()">Back</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- POPUPS -->
+<div id="successPopup" class="popup">
+  <h3>Bill Paid Successfully.</h3>
+  <button onclick="goHome()">Go Home</button>
+  <button class="stay" onclick="closePopup()">Stay</button>
+</div>
+
+<div id="insufficientPopup" class="popup">
+  <h3>Insufficient Balance.</h3>
+  <button onclick="goHome()">Go Home</button>
+  <button class="stay" onclick="closePopup()">Stay</button>
+</div>
+
+<div id="limitPopup" class="popup">
+  <h3>Transaction Limit Reached.</h3>
+  <button onclick="goHome()">Go Home</button>
+  <button class="stay" onclick="closePopup()">Stay</button>
+</div>
+
+<script>
+  function goHome() {
+    window.location.href = "/home";
+  }
+
+  function toggleOption(option) {
+    const inst = document.getElementById('installmentOption');
+    const multi = document.getElementById('multipleSourceOption');
+    const instBox = document.getElementById('installmentDetails');
+    const multiBox = document.getElementById('multipleSourceDetails');
+
+    if (option === 'installment') {
+      inst.checked ? (instBox.style.display = 'block', multi.checked = false, multiBox.style.display = 'none') : instBox.style.display = 'none';
+    } else {
+      multi.checked ? (multiBox.style.display = 'block', inst.checked = false, instBox.style.display = 'none') : multiBox.style.display = 'none';
+    }
+  }
+
+  function calculateInstallment() {
+    const amount = parseFloat(document.getElementById('amount').value);
+    const months = parseInt(document.getElementById('installmentMonths').value);
+    const output = document.getElementById('monthlyInstallment');
+    const info = document.getElementById('installmentInfo');
+
+    if (!isNaN(amount) && months) {
+      const monthly = (amount / months).toFixed(2);
+      output.value = monthly;
+
+      const d1 = new Date();
+      d1.setMonth(d1.getMonth() + 1);
+      const d2 = new Date();
+      d2.setMonth(d2.getMonth() + 2);
+
+      info.innerText = months === 2
+        ? `Next Installment (BDT ${monthly}) due on ${d1.toDateString()}`
+        : `Next Installments: BDT ${monthly} on ${d1.toDateString()} and ${d2.toDateString()}`;
+    } else {
+      output.value = '';
+      info.innerText = '';
+    }
+  }
+
+  document.getElementById('amount').addEventListener('input', calculateInstallment);
+
+  function adjustSliders(changed) {
+    const sliders = {
+      mobile: document.getElementById('mobileSlider'),
+      bank: document.getElementById('bankSlider'),
+      card: document.getElementById('cardSlider')
+    };
+
+    const values = {
+      mobile: parseInt(sliders.mobile.value),
+      bank: parseInt(sliders.bank.value),
+      card: parseInt(sliders.card.value)
+    };
+
+    const total = values.mobile + values.bank + values.card;
+    if (total !== 100) {
+      const others = ['mobile', 'bank', 'card'].filter(id => id !== changed);
+      const remaining = 100 - values[changed];
+      const v1 = Math.floor(remaining / 2);
+      const v2 = remaining - v1;
+      sliders[others[0]].value = v1;
+      sliders[others[1]].value = v2;
+    }
+
+    document.getElementById('mobileValue').innerText = sliders.mobile.value + '%';
+    document.getElementById('bankValue').innerText = sliders.bank.value + '%';
+    document.getElementById('cardValue').innerText = sliders.card.value + '%';
+  }
+
+  function showPopup(id) {
+    document.getElementById(id).style.display = 'block';
+  }
+
+  function closePopup() {
+    document.querySelectorAll('.popup').forEach(p => p.style.display = 'none');
+  }
+
+  window.onload = function () {
+    const popupType = "{{ popup | safe }}";
+    if (popupType === "success") showPopup("successPopup");
+    else if (popupType === "insufficient") showPopup("insufficientPopup");
+    else if (popupType === "limit") showPopup("limitPopup");
+  };
+
+  document.getElementById("billForm").addEventListener("submit", function (event) {
+    const isMultiSource = document.getElementById("multipleSourceOption").checked;
+    const bankAccountInput = document.getElementById("bankAccount");
+    const cardNumberInput = document.getElementById("cardNumber");
+    const bankError = document.getElementById("bankError");
+    const cardError = document.getElementById("cardError");
+
+    // Reset styles/messages
+    bankAccountInput.style.border = "";
+    cardNumberInput.style.border = "";
+    bankError.style.display = "none";
+    cardError.style.display = "none";
+
+    if (isMultiSource) {
+      let hasError = false;
+
+      if (!bankAccountInput.value.trim()) {
+        bankAccountInput.style.border = "2px solid #ff6b6b";
+        bankError.style.display = "block";
+        hasError = true;
+      }
+
+      if (!cardNumberInput.value.trim()) {
+        cardNumberInput.style.border = "2px solid #ff6b6b";
+        cardError.style.display = "block";
+        hasError = true;
+      }
+
+      if (hasError) {
+        event.preventDefault(); // Block submission
+      }
+    }
+  });
+
+
+</script>
+
+
+
+</body>
+</html>

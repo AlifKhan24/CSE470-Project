@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Update Profile - Mobile Banking</title>
+  <style>
+    body {
+      margin: 0;
+      font-family: playfair display;
+      background: url('https://i.postimg.cc/5NSFTp2V/4775334-19366.jpg');
+      background-size: cover;
+    }
+
+    .overlay {
+      background-color: none;
+      min-height: 100vh;
+      padding-bottom: 60px;
+    }
+
+    nav {
+      background-color: #0f2749;
+      padding: 10px 20px;
+      display: flex;
+      align-items: center;
+    }
+
+    nav img {
+      height: 40px;
+      cursor: pointer;
+    }
+
+    .container {
+      max-width: 900px;
+      margin: 30px auto;
+      background: #b2d2ee;
+      padding: 30px;
+      border-radius: 12px;
+      box-shadow: 0 0 20px rgba(0,0,0,0.1);
+    }
+
+    .header h2 {
+      margin: 0;
+      text-align: center;
+    }
+
+    .profile-info {
+      display: flex;
+      align-items: center;
+      margin-top: 30px;
+      gap: 20px;
+    }
+
+    .profile-info img {
+      width: 100px;
+      height: 100px;
+      border-radius: 50%;
+      object-fit: cover;
+    }
+
+    .profile-details h3 {
+      margin: 0;
+    }
+
+    .info-grid {
+      margin-top: 30px;
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 20px;
+    }
+
+    .info-grid .form-group {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .info-grid label {
+      font-weight: 500;
+      margin-bottom: 5px;
+    }
+
+    .info-grid input {
+      padding: 10px;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+      font-size: 14px;
+      background-color: #fff;
+    }
+
+    .button-row {
+      display: flex;
+      justify-content: center;
+      gap: 20px;
+      margin-top: 40px;
+    }
+
+    .button-row button {
+      padding: 10px 25px;
+      border: none;
+      border-radius: 6px;
+      font-weight: bold;
+      cursor: pointer;
+    }
+
+    .confirm-btn {
+      background-color: #0f7b0f;
+      color: white;
+      font-family:  playfair display;
+    }
+
+    .back-btn {
+      background-color: #cc0000;
+      color: white;
+      font-family:  playfair display;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="overlay">
+    <nav>
+      <img src="https://i.postimg.cc/nLt7Kfnk/Mobile-Banking-Logo.png" alt="Logo" onclick="goHome()" />
+    </nav>
+
+    <div class="container">
+      <div class="header">
+        <h2>Update Your Profile</h2>
+      </div>
+
+      {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+          {% for category, message in messages %}
+            <div style="text-align:center; margin-top: 10px; color: {{ 'green' if category == 'success' else 'red' }};">
+              <strong>{{ message }}</strong>
+            </div>
+          {% endfor %}
+        {% endif %}
+      {% endwith %}
+
+      <div class="profile-info">
+        <img src="{{ url_for('static', filename='uploads/' + profile.profile_pic) if profile.profile_pic else 'https://i.postimg.cc/y86VfCdF/User-Profile-PNG-Image.png' }}" alt="User Photo" />
+
+        <div class="profile-details">
+          <h3 id="name">{{ profile.name }}</h3>
+          <p id="phone">{{ profile.phone }}</p>
+        </div>
+      </div>
+
+      <form method="POST" action="/updateprofile" enctype="multipart/form-data">
+        <div class="info-grid">
+          <div class="form-group">
+            <label>First Name</label>
+            <input type="text" id="firstName" name="firstName" value="{{ profile.firstName }}" required>
+          </div>
+          <div class="form-group">
+            <label>Last Name</label>
+            <input type="text" id="lastName" name="lastName" value="{{ profile.lastName }}" required>
+          </div>
+          <div class="form-group">
+            <label>Date of Birth</label>
+            <input type="date" id="dob" name="dob" value="{{ profile.dob }}" required>
+          </div>
+          <div class="form-group">
+            <label>Email</label>
+            <input type="email" id="email" name="email" value="{{ profile.email }}" required>
+          </div>
+          <div class="form-group">
+            <label>NID</label>
+            <input type="text" id="nid" name="nid" value="{{ profile.nid }}" required>
+          </div>
+          <div class="form-group">
+            <label>Profile Picture (Optional)</label>
+            <input type="file" id="profilePic" name="profilePic" accept="image/*">
+          </div>
+        </div>
+
+        <div class="button-row">
+          <button class="confirm-btn" type="submit">Confirm Update</button>
+          <button class="back-btn" onclick="goBack()" type="button">Back</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script>
+    function goHome() {
+      window.location.href = "/home";
+    }
+
+    function goBack() {
+      window.location.href = "/profile";
+    }
+  </script>
+
+</body>
+</html>

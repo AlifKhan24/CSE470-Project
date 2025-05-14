@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pay Bills - Mobile Banking</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: playfair display;
+        }
+        
+        body {
+            background-image: url('https://i.postimg.cc/LsFT1Lwq/pay.webp');
+            background-size: cover;
+            background-position: center;
+            background-attachment: fixed;
+            color: #fff;
+            min-height: 100vh;
+        }
+        
+        .navbar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px 20px;
+            background-color: #0f2749;
+        }
+        
+        .logo-btn {
+            width: 120px;
+            height: 50px;
+            background-color: transparent;
+            border: none;
+            cursor: pointer;
+            background-image: url('https://i.postimg.cc/nLt7Kfnk/Mobile-Banking-Logo.png');
+            background-size: contain;
+            background-repeat: no-repeat;
+            background-position: center;
+        }
+        
+        .main-content {
+            padding: 20px;
+            margin-top: 20px;
+            display: flex;
+            flex-direction: column;
+            min-height: calc(100vh - 100px);
+        }
+        
+        .button-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 35px;
+            margin-top: 10px;
+            flex-grow: 1;
+        }
+        
+        .menu-button {
+            background-color: rgba(255, 255, 255, 0.9);
+            color: #333;
+            border: none;
+            border-radius: 10px;
+            padding: 20px 15px;
+            font-size: 16px;
+            font-weight: bold;
+            text-align: center;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 120px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .menu-button::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #3e75c2;
+            background-size: contain;
+            background-position: center;
+            background-repeat: no-repeat;
+            opacity: 0.2;
+            z-index: 0;
+            
+        }   
+
+        .menu-button span {
+            position: relative;
+            z-index: 1;
+            text-shadow: 0 0 5px rgba(255, 255, 255, 0.8);
+        }
+
+        .menu-button:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
+        }
+        
+        .back-button-container {
+            display: flex;
+            justify-content: center;
+            margin-top: auto;
+            padding-bottom: 20px;
+        }
+        
+        .back-button {
+            background-color: #ff4444;
+            color: white;
+            border: none;
+            border-radius: 25px;
+            padding: 12px 30px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+            transition: background-color 0.3s;
+        }
+        
+        .back-button:hover {
+            background-color: #cc0000;
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar">
+        <button class="logo-btn" id="logoBtn"></button>
+    </nav>
+    
+    <div class="main-content">
+        <h1 style="color: white ; text-align: center; margin-bottom: 20px;">Pay Bills</h1>
+        
+        <div class="button-grid">
+            <button class="menu-button" id="gasBillBtn" style="--bg-image: url('https://i.postimg.cc/v8VpZC0z/bank.png')">
+                <span>Gas Bill</span>
+            </button>
+            <button class="menu-button" id="electricityBillBtn" style="--bg-image: url('pic.png')">
+                <span>Electricity Bill</span>
+            </button>
+            <button class="menu-button" id="wifiBillBtn" style="--bg-image: url('your-button-bg3.jpg')">
+                <span>WiFi Bill</span>
+            </button>
+        </div>
+        
+        <div class="back-button-container">
+            <button class="back-button" id="backBtn">Back</button>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const logoBtn = document.getElementById('logoBtn');
+            logoBtn.addEventListener('click', function() {
+                // You can update this to redirect home later
+                window.location.href = "/home";
+            });
+    
+            const gasBillBtn = document.getElementById('gasBillBtn');
+            const electricityBillBtn = document.getElementById('electricityBillBtn');
+            const wifiBillBtn = document.getElementById('wifiBillBtn');
+    
+            gasBillBtn.addEventListener('click', function() {
+                window.location.href = "/gas_bill";
+            });
+    
+            electricityBillBtn.addEventListener('click', function() {
+                window.location.href = "/electricity_bill";
+            });
+    
+            wifiBillBtn.addEventListener('click', function() {
+                window.location.href = "/wifi_bill";
+            });
+    
+            const backBtn = document.getElementById('backBtn');
+            backBtn.addEventListener('click', function() {
+                window.history.back();
+            });
+        });
+    </script>
+    
+    
+</body>
+</html>
