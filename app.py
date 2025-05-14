@@ -1043,6 +1043,84 @@ def card():
         db.rollback()
         return render_template("card.html", error="Something went wrong. Please try again.")
 
+
+#send money
+#send_now
+@app.route("/send_now", methods=["GET", "POST"])
+def send_now():
+    user_id = get_user_id_from_cookie()
+    if not user_id:
+        return render_template("login.html")
+
+    if request.method == "GET":
+        prefill_name = request.args.get("name")
+        prefill_phone = request.args.get("phone")
+        success = request.args.get("success", "")
+        return render_template("send_now.html", prefill_name=prefill_name, prefill_phone=prefill_phone, success=success)
+
+
+    recipient_phone = request.form.get("recipient_phone")
+    recipient_name = request.form.get("recipient_name")
+    amount_str = request.form.get("amount")
+    save_info = request.form.get("save_info")
+
+    try:
+        amount = float(amount_str)
+        if amount <= 0:
+            return redirect(url_for('send_now', success='0'))
+    except (ValueError, TypeError):
+        return redirect(url_for('send_now', success='0'))
+
+    with db.cursor() as cursor:
+        cursor.execute("SELECT * FROM user_profile WHERE phone_number = %s", (recipient_phone,))
+        recipient = cursor.fetchone()
+        if not recipient:
+            return redirect(url_for('send_now', success='0'))
+
+        cursor.execute("SELECT balance, transaction_limit FROM user_profile WHERE user_id = %s", (user_id,))
+        sender = cursor.fetchone()
+        if not sender:
+            return render_template("login.html")
+
+        if sender['balance'] < amount:
+            return redirect(url_for('send_now', status='insufficient_balance'))
+
+        if sender['transaction_limit'] < amount:
+            return redirect(url_for('send_now', status='limit_reached'))
+
+        trx_id = generate_unique_trx_id(cursor)
+
+        cursor.execute("""
+            INSERT INTO send_money (user_id, phone_no, name, amount, trx_id)
+            VALUES (%s, %s, %s, %s, %s)
+        """, (user_id, recipient_phone, recipient_name, amount, trx_id))
+
+        cursor.execute("UPDATE user_profile SET balance = balance - %s WHERE user_id = %s", (amount, user_id))
+        cursor.execute("UPDATE user_profile SET balance = balance + %s WHERE phone_number = %s", (amount, recipient_phone))
+
+        if save_info == "on":
+            try:
+                cursor.execute("""
+                    INSERT IGNORE INTO saved_details (user_id, name, phone)
+                    VALUES (%s, %s, %s)
+                """, (user_id, recipient_name, recipient_phone))
+            except Exception as e:
+                print("Error saving recipient details:", e)
+
+        cursor.execute("INSERT INTO notifications (user_id, alerts) VALUES (%s, %s)",
+                       (user_id, f"Sent {amount} to {recipient_name or recipient_phone}"))
+        cursor.execute("INSERT INTO notifications (user_id, alerts) VALUES (%s, %s)",
+                       (recipient['user_id'], f"Received {amount} from User {user_id}"))
+
+        cursor.execute("""
+            INSERT INTO history (user_id, type, trx_id, account, amount)
+            VALUES (%s, %s, %s, %s, %s)
+        """, (user_id, "Send Money", trx_id, recipient_phone, -amount))
+
+        db.commit()
+
+    return redirect(url_for('send_now', status='success'))
+
 ### Subah Fatima Hasan ###
 
 
