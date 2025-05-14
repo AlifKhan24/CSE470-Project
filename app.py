@@ -1198,7 +1198,111 @@ def approvals():
             flash("Something went wrong. Try again.", "error")
 
         return redirect("/approvals")
-        
+
+@app.route('/download_statements')
+def download_statements():
+    user_id = request.cookies.get('user_id')
+    if not user_id:
+        return redirect('/login')
+    '''connection = db
+    cursor = connection.cursor(pymysql.cursors.DictCursor)'''
+    connection = pymysql.connect(
+        host="localhost",
+        user="root",
+        password="janina",
+        database="mobilebanking",
+        cursorclass=pymysql.cursors.DictCursor
+    )
+    cursor = connection.cursor()
+
+    # Fetch user info
+    cursor.execute("SELECT first_name, last_name, email, phone_number FROM user_profile WHERE user_id=%s", (user_id,))
+    user = cursor.fetchone()
+    if not user:
+        connection.close()
+        return "User not found"
+
+    # Prepare PDF
+    buffer = BytesIO()
+    pdf = canvas.Canvas(buffer, pagesize=letter)
+    width, height = letter
+
+    y = height - inch
+
+    # Draw logo (optional)
+    logo_path = "templates/logo.png"  # Replace with your actual logo path
+    try:
+        pdf.drawImage(logo_path, 40, y - 50, width=100, height=80)
+    except:
+        pass
+
+    y -= 70
+
+    # User Info
+    pdf.setFont("Helvetica-Bold", 14)
+    pdf.drawString(200, y, "Transaction Statement")
+    y -= 30
+
+    pdf.setFont("Helvetica", 10)
+    pdf.drawString(40, y, f"Name: {user['first_name']} {user['last_name']}")
+    y -= 15
+    pdf.drawString(40, y, f"Email: {user['email']}")
+    y -= 15
+    pdf.drawString(40, y, f"Phone: {user['phone_number']}")
+    y -= 15
+    pdf.drawString(40, y, f"Generated on: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+    y -= 30
+
+    # Define a helper to draw transactions
+    def draw_section(title, transactions, headers):
+        nonlocal y
+        if y < 100:
+            pdf.showPage()
+            y = height - 50
+        pdf.setFont("Helvetica-Bold", 12)
+        pdf.drawString(40, y, title)
+        y -= 20
+        pdf.setFont("Helvetica-Bold", 10)
+        for i, header in enumerate(headers):
+            pdf.drawString(40 + i*100, y, header)
+        y -= 15
+        pdf.setFont("Helvetica", 10)
+        for trx in transactions:
+            for i, key in enumerate(headers):
+                value = str(trx.get(key.lower(), ''))
+                pdf.drawString(40 + i*100, y, value)
+            y -= 15
+            if y < 100:
+                pdf.showPage()
+                y = height - 50
+
+    # Transactions to include
+    queries = [
+        ("Added Money (Bank)", "SELECT trx_id, amount FROM add_money_bank WHERE user_id=%s", ['Trx_id', 'Amount']),
+        ("Added Money (Card)", "SELECT trx_id, amount FROM add_money_card WHERE user_id=%s", ['Trx_id', 'Amount']),
+        ("Sent Money", "SELECT trx_id, amount FROM send_money WHERE user_id=%s", ['Trx_id', 'Amount']),
+        ("Sent International", "SELECT trx_id, amount_in_bdt FROM send_money_international WHERE user_id=%s", ['Trx_id', 'Amount_in_bdt']),
+        ("Loans", "SELECT trx_id, loan_amount FROM loans WHERE user_id=%s", ['Trx_id', 'Loan_amount']),
+        ("Investments", "SELECT trx_id, amount FROM investment_user WHERE user_id=%s", ['Trx_id', 'Amount']),
+        ("Electricity Bills", "SELECT meter_no, amount FROM pay_electricity WHERE user_id=%s", ['Meter_no', 'Amount']),
+        ("Gas Bills", "SELECT meter_no, amount FROM pay_gas WHERE user_id=%s", ['Meter_no', 'Amount']),
+        ("Wi-Fi Bills", "SELECT wifi_id, amount FROM pay_wifi WHERE user_id=%s", ['Wifi_id', 'Amount']),
+    ]
+
+    for section_title, query, headers in queries:
+        cursor.execute(query, (user_id,))
+        records = cursor.fetchall()
+        if records:
+            draw_section(section_title, records, headers)
+            y -= 10
+
+    connection.close()
+    pdf.save()
+
+    buffer.seek(0)
+    return send_file(buffer, as_attachment=True, download_name="statement.pdf", mimetype='application/pdf')
+
+
 ### Subah Fatima Hasan ###
 
 
