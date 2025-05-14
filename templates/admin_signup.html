@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Admin Signup - Mobile Banking</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: playfair display;
+    }
+
+    body {
+      background-color: #e5e5dc;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+    }
+
+    .container {
+      width: 90%;
+      max-width: 1000px;
+      display: flex;
+      background-color: #0f1c2e;
+      border-radius: 10px;
+      overflow: hidden;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+    }
+
+    .left-section {
+      background-color: #0f1c2e;
+      color: white;
+      flex: 1;
+      padding: 40px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      text-align: center;
+    }
+
+    .left-section img {
+      width: 200px;
+      border-radius: 10px;
+      margin-bottom: 20px;
+    }
+
+    .left-section h2 {
+      font-size: 22px;
+      color: #fff;
+    }
+
+    .right-section {
+      background-color: #fff;
+      flex: 1;
+      padding: 40px 30px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+    }
+
+    .right-section h1 {
+      color: #3e75c2;
+      margin-bottom: 20px;
+    }
+
+    form {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 15px 20px;
+    }
+
+    input[type="text"],
+    input[type="email"],
+    input[type="password"],
+    input[type="date"] {
+      padding: 10px;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+      font-size: 14px;
+      width: 100%;
+    }
+
+    .error-message {
+      color: red;
+      font-size: 13px;
+      grid-column: span 2;
+      margin-top: -10px;
+      margin-bottom: 10px;
+    }
+
+    .signup-btn {
+      grid-column: span 2;
+      background-color: #3e75c2;
+      border: none;
+      padding: 12px;
+      color: white;
+      font-size: 16px;
+      border-radius: 6px;
+      cursor: pointer;
+    }
+
+    .signup-btn:disabled {
+      background-color: #9dbce3;
+      cursor: not-allowed;
+    }
+
+    .back-btn {
+      grid-column: span 2;
+      background-color: #ccc;
+      color: #0f1c2e;
+      border: none;
+      padding: 12px;
+      font-size: 16px;
+      border-radius: 6px;
+      cursor: pointer;
+    }
+
+    @media (max-width: 768px) {
+      .container {
+        flex-direction: column;
+      }
+
+      form {
+        grid-template-columns: 1fr;
+      }
+
+      .signup-btn,
+      .back-btn {
+        grid-column: span 1;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="left-section">
+      <img src="https://i.postimg.cc/nLt7Kfnk/Mobile-Banking-Logo.png" alt="Admin Signup Image">
+      <h2>Let’s Make it Happen Together!</h2>
+    </div>
+    <div class="right-section">
+      <h1>Register For Admin</h1>
+      
+      <form id="adminSignupForm" method="POST" action="/admin_signup">
+        <input type="text" name="firstName" placeholder="First Name" required>
+        <input type="text" name="lastName" placeholder="Last Name" required>
+        <input type="email" name="email" placeholder="Email" required>
+        <div id="emailError" class="error-message" style="display: none;"></div>
+
+        <input type="text" name="phone" placeholder="Phone Number" required>
+        <div id="phoneError" class="error-message" style="display: none;"></div>
+
+        <input type="text" name="nid" placeholder="NID" required>
+        <input type="password" name="password" placeholder="Create Password" required>
+        <input type="date" name="dob" placeholder="Date of Birth" required>
+
+        <button type="submit" class="signup-btn" id="submitBtn" disabled>Submit</button>
+        <button type="button" class="back-btn" onclick="window.location.href='/'">Back</button>
+      </form>
+    </div>
+  </div>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      const form = document.getElementById('adminSignupForm');
+      const firstName = form.elements['firstName'];
+      const lastName = form.elements['lastName'];
+      const phone = form.elements['phone'];
+      const email = form.elements['email'];
+      const nid = form.elements['nid'];
+      const password = form.elements['password'];
+      const dob = form.elements['dob'];
+      const submitBtn = document.getElementById('submitBtn');
+
+      const phoneErrorDiv = document.getElementById('phoneError');
+      const emailErrorDiv = document.getElementById('emailError');
+
+      // Capitalize names
+      const capitalizeLive = (input) => {
+        input.addEventListener('input', () => {
+          let val = input.value;
+          if (val.length > 0) {
+            input.value = val.charAt(0).toUpperCase() + val.slice(1).toLowerCase();
+          }
+        });
+      };
+      capitalizeLive(firstName);
+      capitalizeLive(lastName);
+
+      // Enforce digit-only input
+      const enforceDigitInput = (input, maxLength) => {
+        input.addEventListener('input', () => {
+          input.value = input.value.replace(/\D/g, '').slice(0, maxLength);
+        });
+      };
+      enforceDigitInput(nid, 10);
+
+      // Phone validation
+      phone.addEventListener('input', () => {
+        phone.value = phone.value.replace(/\D/g, '').slice(0, 11);
+        if (phone.value.length >= 2 && !phone.value.startsWith('01')) {
+          phoneErrorDiv.textContent = "Phone number must start with '01'.";
+          phoneErrorDiv.style.display = 'block';
+        } else {
+          phoneErrorDiv.textContent = "";
+          phoneErrorDiv.style.display = 'none';
+        }
+        validateForm();
+      });
+
+      // Email validation
+      email.addEventListener('input', () => {
+        if (email.value.length > 0 && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.value)) {
+          emailErrorDiv.textContent = "Invalid email address.";
+          emailErrorDiv.style.display = 'block';
+        } else {
+          emailErrorDiv.textContent = "";
+          emailErrorDiv.style.display = 'none';
+        }
+        validateForm();
+      });
+
+      const validateForm = () => {
+        const isValidPhone = /^01\d{9}$/.test(phone.value);
+        const isValidEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.value);
+        const isValidNID = /^\d{10}$/.test(nid.value);
+        const isNameFilled = firstName.value.trim() && lastName.value.trim();
+        const isPasswordFilled = password.value.trim().length > 0;
+        const isDOBFilled = dob.value;
+
+        if (isValidPhone && isValidEmail && isValidNID && isNameFilled && isPasswordFilled && isDOBFilled) {
+          submitBtn.disabled = false;
+        } else {
+          submitBtn.disabled = true;
+        }
+      };
+
+      [firstName, lastName, nid, password, dob].forEach(input => {
+        input.addEventListener('input', validateForm);
+      });
+    });
+  </script>
+</body>
+</html>

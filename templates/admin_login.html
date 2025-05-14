@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin Login - Mobile Banking</title>
+  <style>
+    body {
+      font-family: playfair display;
+      background-color: #f5f5f5;
+      margin: 0;
+      padding: 0;
+      display: flex;
+      height: 100vh;
+      overflow: hidden;
+    }
+
+    .image-section {
+      flex: 1;
+      background-image: url('https://i.postimg.cc/zvxwcVG6/Chat-GPT-Image-Apr-6-2025-01-23-44-AM.png');
+      background-size: cover;
+      background-position: center;
+    }
+
+    .login-section {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+
+    .login-container {
+      background-color: white;
+      padding: 40px;
+      border-radius: 10px;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+      width: 100%;
+      max-width: 400px;
+    }
+
+    .welcome-text {
+      font-size: 24px;
+      font-weight: bold;
+      margin-bottom: 30px;
+      text-align: center;
+      color: #2c3e50;
+    }
+
+    .input-group {
+      margin-bottom: 25px;
+    }
+
+    .input-group label {
+      display: block;
+      margin-bottom: 8px;
+      font-weight: bold;
+      color: #555;
+    }
+
+    .input-group input {
+      width: 100%;
+      padding: 12px;
+      border: 1px solid #ddd;
+      border-radius: 5px;
+      box-sizing: border-box;
+      font-size: 16px;
+    }
+
+    .login-button {
+      width: 100%;
+      padding: 14px;
+      background-color: #2c3e50;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      font-weight: bold;
+      font-size: 16px;
+      cursor: pointer;
+      transition: background-color 0.3s;
+      margin-top: 10px;
+      font-family:  playfair display;
+    }
+
+    .login-button:hover {
+      background-color: #1a252f;
+    }
+
+    .back-button {
+      background-color: #ccc;
+      color: #2c3e50;
+      text-align: center;
+      text-decoration: none;
+      display: block;
+      padding: 14px;
+      border-radius: 5px;
+      font-weight: bold;
+      margin-top: 10px;
+    }
+
+    .error-message {
+      color: red;
+      font-size: 14px;
+      margin-bottom: 15px;
+      text-align: center;
+    }
+
+    @media (max-width: 768px) {
+      body {
+        flex-direction: column;
+      }
+
+      .image-section {
+        height: 200px;
+        flex: none;
+      }
+
+      .login-section {
+        flex: none;
+        padding: 20px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="image-section"></div>
+
+  <div class="login-section">
+    <div class="login-container">
+      <div class="welcome-text">Welcome Admin</div>
+
+      {% if error %}
+        <div class="error-message">{{ error }}</div>
+      {% endif %}
+
+      <form id="adminLoginForm" action="/admin_login" method="POST">
+        <div class="input-group">
+          <label for="adminId">Admin ID</label>
+          <input type="text" id="adminId" name="phone" placeholder="Enter your Admin ID" required>
+        </div>
+
+        <div class="input-group">
+          <label for="adminPassword">Password</label>
+          <input type="password" id="adminPassword" name="password" placeholder="Enter your password" required>
+        </div>
+
+        <button type="submit" class="login-button">Log In</button>
+      </form>
+
+      <a href="/" class="back-button">Back</a>
+    </div>
+  </div>
+</body>
+</html>

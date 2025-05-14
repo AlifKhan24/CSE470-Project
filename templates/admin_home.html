@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Admin Homepage - Mobile Banking</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      font-family: playfair display;
+    }
+
+    body {
+      background-image: url('https://i.postimg.cc/jSk2mbp9/adm.png');
+      background-size: cover;
+      background-position: center;
+      background-attachment: fixed;
+      background-color: #f5f5f5;
+      color: #fff;
+      min-height: 100vh;
+    }
+
+    .navbar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 15px 20px;
+      background-color: #0f2749;
+    }
+
+    .logo-btn {
+      width: 120px;
+      height: 40px;
+      background-color: transparent;
+      border: none;
+      cursor: pointer;
+      background-image: url('https://i.postimg.cc/nLt7Kfnk/Mobile-Banking-Logo.png');
+      background-size: contain;
+      background-repeat: no-repeat;
+      background-position: center;
+    }
+
+    .nav-right {
+      display: flex;
+      gap: 10px;
+    }
+
+    .nav-right button {
+      padding: 8px 12px;
+      border: none;
+      border-radius: 5px;
+      background-color: #aac5ea;
+      color: #000;
+      font-weight: bold;
+      cursor: pointer;
+    }
+
+    .main-content {
+      padding: 20px;
+      margin-top: 20px;
+      display: flex;
+      flex-direction: column;
+      min-height: calc(100vh - 100px);
+    }
+
+    .button-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 35px;
+      margin-top: 10px;
+      flex-grow: 1;
+    }
+
+    .menu-button {
+      background-color: rgba(255, 255, 255, 0.9);
+      color: #333;
+      border: none;
+      border-radius: 10px;
+      padding: 20px 15px;
+      font-size: 16px;
+      font-weight: bold;
+      text-align: center;
+      cursor: pointer;
+      transition: transform 0.2s, box-shadow 0.2s;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 120px;
+      position: relative;
+      overflow: hidden;
+      text-decoration: none;
+    }
+
+    .menu-button::after {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background-image: var(--bg-image);
+      background-size: contain;
+      background-position: center;
+      background-repeat: no-repeat;
+      opacity: 0.2;
+      z-index: 0;
+      margin: 10px;
+    }
+
+    .menu-button span {
+      position: relative;
+      z-index: 1;
+      text-shadow: 0 0 5px rgba(255, 255, 255, 0.8);
+    }
+
+    .menu-button:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
+    }
+  </style>
+</head>
+<body>
+
+  <nav class="navbar">
+    <button class="logo-btn" id="logoBtn"></button>
+    <div class="nav-right">
+      <!-- <button id="adminProfileBtn">Admin Profile</button> -->
+      <button id="logoutBtn">Log out</button>
+    </div>
+  </nav>
+
+  <div class="main-content">
+    <div class="button-grid">
+      <a href="/approvals" class="menu-button" style="--bg-image: url('approval.png')"><span>Approvals</span></a>
+      <a href="/user_suspend" class="menu-button" style="--bg-image: url('actions.png')"><span>Actions</span></a>
+      <a href="/admin_reports" class="menu-button" style="--bg-image: url('report.png')"><span>Reports</span></a>
+      <a href="/admin_inbox" class="menu-button" style="--bg-image: url('complaint.png')"><span>Messages</span></a>
+      <a href="/approve_loans" class="menu-button" style="--bg-image: url('loan.png')"><span>Approve Loans</span></a>
+    </div>
+  </div>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', function () {
+      document.getElementById('logoBtn').onclick = () => location.reload();
+      document.getElementById('logoutBtn').onclick = () => window.location.href = "/";
+      document.getElementById('adminProfileBtn').onclick = () => window.location.href = "/admin_profile";
+    });
+  </script>
+</body>
+</html>
