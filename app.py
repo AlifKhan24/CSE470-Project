@@ -987,6 +987,140 @@ def pay_loan(trx_id):
 
 
 
+# Messages
+@app.route("/user_messages", methods=["GET", "POST"])
+def user_messages():
+    user_id = request.cookies.get('user_id')
+    if not user_id:
+        return "Unauthorized access", 401
+
+    try:
+        with db.cursor() as cursor:
+            if request.method == "POST":
+                message = request.form.get("message")
+                if message and message.strip():
+                    cursor.execute(
+                        "INSERT INTO messages (sender_id, message, role) VALUES (%s, %s, %s)",
+                        (user_id, message.strip(), "user")
+                    )
+                    db.commit()
+                    return redirect("/user_messages")
+
+
+            cursor.execute("""
+                SELECT message, role, timestamp
+                FROM messages
+                WHERE 
+                    (sender_id = %s AND role = 'user') OR 
+                    (recipient_id = %s AND role = 'admin')
+                ORDER BY timestamp ASC
+            """, (user_id, user_id))
+
+            messages = cursor.fetchall()
+
+    except Exception as e:
+        print(f"Message error: {e}")
+        messages = []
+
+    return render_template("user_messages.html", messages=messages)
+
+@app.route("/admin_inbox")
+def admin_inbox():
+    try:
+        with db.cursor() as cursor:
+            cursor.execute("""
+                SELECT m1.sender_id AS user_id,
+                       u.phone_number,
+                       m1.message,
+                       m1.timestamp,
+                       EXISTS (
+                           SELECT 1 FROM messages m2 
+                           WHERE m2.sender_id = m1.sender_id 
+                           AND m2.role = 'user' 
+                           AND m2.is_read = FALSE
+                       ) AS has_unread
+                FROM messages m1
+                JOIN user_profile u ON m1.sender_id = u.user_id
+                WHERE m1.role = 'user'
+                AND m1.timestamp = (
+                    SELECT MAX(m2.timestamp)
+                    FROM messages m2
+                    WHERE m2.sender_id = m1.sender_id
+                    AND m2.role = 'user'
+                )
+                ORDER BY m1.timestamp DESC;
+            """)
+            conversations = cursor.fetchall()
+    except Exception as e:
+        print("Inbox fetch error:", e)
+        conversations = []
+
+    return render_template("admin_inbox.html", conversations=conversations)
+
+@app.route("/admin_messages/<int:user_id>", methods=["GET", "POST"])
+def admin_messages(user_id):
+    admin_id = get_user_id_from_cookie()
+    if not admin_id:
+        return redirect("/admin_login")
+
+    try:
+        with db.cursor() as cursor:
+            if request.method == "POST":
+                msg = request.form.get("message")
+                if msg:
+
+                    cursor.execute("""
+                        INSERT INTO messages (sender_id, recipient_id, message, role)
+                        VALUES (NULL, %s, %s, 'admin')
+                    """, (user_id, msg.strip()))
+
+                    db.commit()
+                    return redirect(f"/admin_messages/{user_id}")
+
+            cursor.execute("""
+                UPDATE messages 
+                SET is_read = TRUE 
+                WHERE sender_id = %s AND role = 'user' AND is_read = FALSE
+            """, (user_id,))
+            db.commit()
+
+            cursor.execute("""
+                SELECT message, role, timestamp
+                FROM messages
+                WHERE (sender_id = %s AND role = 'user') 
+                   OR (recipient_id = %s AND role = 'admin')
+                ORDER BY timestamp ASC
+            """, (user_id, user_id))
+            messages = cursor.fetchall()
+
+        return render_template("admin_messages.html", messages=messages, user_id=user_id)
+    except Exception as e:
+        print("Chat load error:", e)
+        return "Internal Server Error", 500
+
+
+#Notifications
+@app.route('/notifications')
+def notifications():
+    user_id = request.cookies.get('user_id')
+    if not user_id:
+        return redirect('/login')
+    with db.cursor() as cursor:
+        cursor.execute("SELECT alerts, timestamp FROM notifications WHERE user_id = %s ORDER BY timestamp DESC", (user_id,))
+        notifications = cursor.fetchall()
+    return render_template('notifications.html', notifications=notifications)
+
+@app.route('/clear_notifications', methods=['POST'])
+def clear_notifications():
+    user_id = request.cookies.get('user_id')
+    if not user_id:
+        return redirect('/login')
+    with db.cursor() as cursor:
+        cursor.execute("DELETE FROM notifications WHERE user_id = %s", (user_id,))
+    db.commit()
+    return redirect('/notifications')
+
+
 ### Raduan Ahmed Opy ###
 #Payment
 #gas bill
