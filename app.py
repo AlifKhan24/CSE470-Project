@@ -1121,6 +1121,56 @@ def clear_notifications():
     return redirect('/notifications')
 
 
+
+#loyalty points
+@app.route('/api/loyalty_points')
+def get_loyalty_points():
+    user_id = get_user_id_from_cookie()
+    if not user_id:
+        return jsonify({'error': 'User not logged in'}), 401
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    try:
+        cursor.execute("SELECT points, tier FROM user_profile WHERE user_id = %s", (user_id,))
+        user = cursor.fetchone()
+        if not user:
+            return jsonify({'error': 'User not found'}), 404
+        return jsonify({'points': user['points'], 'tier': user['tier']})
+    except Exception as e:
+        logging.error(traceback.format_exc())
+        return jsonify({'error': 'Server error'}), 500
+
+@app.route('/loyalty_points', methods=['POST'])
+def update_loyalty_points():
+    user_id = get_user_id_from_cookie()
+    if not user_id:
+        return jsonify({"error": "User not logged in"}), 401
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    try:
+        data = request.get_json()
+        new_points = data.get('points')
+        if new_points is None:
+            return jsonify({"error": "Points not provided"}), 400
+        tiers = [
+            {"name": "Bronze", "min": 0, "max": 99},
+            {"name": "Silver", "min": 100, "max": 299},
+            {"name": "Gold", "min": 300, "max": 699},
+            {"name": "Platinum", "min": 700, "max": 1199},
+            {"name": "Diamond", "min": 1200, "max": float('inf')},
+        ]
+        new_tier = "Bronze"
+        for tier in tiers:
+            if new_points >= tier["min"] and new_points <= tier["max"]:
+                new_tier = tier["name"]
+        cursor.execute("UPDATE user_profile SET points = %s, tier = %s WHERE user_id = %s", (new_points, new_tier, user_id))
+        conn.commit()
+        return jsonify({"success": True, "new_points": new_points, "new_tier": new_tier})
+    except Exception as e:
+        logging.error(traceback.format_exc())
+        return jsonify({"error": "Server error"}), 500
+
+
 ### Raduan Ahmed Opy ###
 #Payment
 #gas bill
