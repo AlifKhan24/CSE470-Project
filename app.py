@@ -813,6 +813,177 @@ def gift_card():
         db.rollback()
         return render_template("gift_card.html", error="An error occurred during redemption.")
 
+#Loans
+# Request Loan
+@app.route("/api/request-loan", methods=["POST"])
+def request_loan():
+    user_id = get_user_id_from_cookie()
+    if not user_id:
+        return jsonify({"success": False, "message": "User not logged in"}), 401
+
+    try:
+        data = request.get_json()
+        amount = float(data.get("amount", 0))
+        duration = int(data.get("duration", 0))
+
+        if amount <= 0 or duration not in range(1, 7):
+            return jsonify({"success": False, "message": "Invalid input"}), 400
+
+        interest_rates = {
+            1: 5,
+            2: 5.5,
+            3: 6,
+            4: 6.5,
+            5: 7,
+            6: 7.5
+        }
+
+        interest_rate = interest_rates[duration]
+        return_amount = round(amount + (amount * (interest_rate / 100)), 2)
+
+        trx_id = ''.join(random.choices(string.ascii_uppercase + string.digits, k=10))
+
+        with db.cursor() as cursor:
+            cursor.execute("""
+                INSERT INTO loans (
+                    trx_id, user_id, loan_amount, interest_rate, duration, return_amount, status,
+                    issue_date, end_date
+                ) VALUES (%s, %s, %s, %s, %s, %s, 'pending', NULL, NULL)
+            """, (
+                trx_id, user_id, amount, interest_rate, duration, return_amount
+            ))
+            db.commit()
+
+        return jsonify({"success": True})
+
+    except Exception as e:
+        db.rollback()
+        print("Loan request error:", e)
+        return jsonify({"success": False, "message": "Server error"}), 500
+
+# Approve Loans
+@app.route("/approve_loans", methods=["GET", "POST"])
+def approve_loans():
+    if request.method == "GET":
+        try:
+            with db.cursor() as cursor:
+                cursor.execute("""
+                    SELECT trx_id, user_id, loan_amount, duration, return_amount
+                    FROM loans
+                    WHERE status = 'pending'
+                    ORDER BY trx_id ASC
+                    LIMIT 10
+                """)
+                pending_loans = cursor.fetchall()
+        except Exception as e:
+            print("Error fetching loans:", e)
+            pending_loans = []
+        return render_template("approve_loans.html", pending_loans=pending_loans)
+
+    elif request.method == "POST":
+        trx_ids = request.form.getlist("trx_ids[]")  # ensure it's from hidden input array
+        try:
+            with db.cursor() as cursor:
+                for index, trx_id in enumerate(trx_ids):
+                    status = request.form.get(f"statuses_{index}")
+                    remarks = request.form.get(f"remarks_{index}", "").strip()
+
+                    if status not in ("approved", "denied"):
+                        continue
+
+                    cursor.execute("SELECT user_id, loan_amount, duration FROM loans WHERE trx_id = %s", (trx_id,))
+                    loan_info = cursor.fetchone()
+                    if not loan_info:
+                        continue
+
+                    user_id = loan_info["user_id"]
+                    loan_amount = loan_info["loan_amount"]
+                    duration = loan_info["duration"]
+
+                    alert_msg = f"Your loan of {loan_amount} has been {status}."
+                    if remarks:
+                        alert_msg += f" Message: {remarks}"
+
+                    cursor.execute("INSERT INTO notifications (user_id, alerts) VALUES (%s, %s)", (user_id, alert_msg))
+
+                    if status == "approved":
+                        issue_date = date.today()
+                        end_date = add_months(issue_date, duration)
+                        cursor.execute("""
+                            UPDATE loans 
+                            SET status = %s, issue_date = %s, end_date = %s, remarks = %s
+                            WHERE trx_id = %s
+                        """, (status, issue_date, end_date, remarks, trx_id))
+                        cursor.execute("UPDATE user_profile SET balance = balance + %s WHERE user_id = %s", (loan_amount, user_id))
+                    else:
+                        cursor.execute("UPDATE loans SET status = %s, remarks = %s WHERE trx_id = %s", (status, remarks, trx_id))
+
+            db.commit()
+            flash(" ", "success")            
+            # flash("Loan approvals updated successfully!", "success")
+        except Exception as e:
+            db.rollback()
+            print("Error updating loans:", traceback.format_exc())
+            flash("An error occurred while processing approvals.", "error")
+
+        return redirect("/approve_loans")
+
+#Active Loans
+@app.route("/active_loans")
+def active_loans():
+    user_id = get_user_id_from_cookie()
+    if not user_id:
+        return redirect("/login")  # or handle unauthorized access
+
+    try:
+        with db.cursor() as cursor:
+            cursor.execute("""
+                SELECT trx_id, user_id, loan_amount, interest_rate, duration,
+                       issue_date, end_date, return_amount
+                FROM loans
+                WHERE user_id = %s AND status IN ('approved', 'pending')
+            """, (user_id,))
+            active_loans = cursor.fetchall()
+    except Exception as e:
+        print("Error loading active loans:", e)
+        active_loans = []
+
+    return render_template("active_loans.html", active_loans=active_loans)
+
+# Pay Loan
+@app.route("/pay_loan/<trx_id>", methods=["POST"])
+def pay_loan(trx_id):
+    try:
+        with db.cursor() as cursor:
+            cursor.execute("SELECT user_id, return_amount FROM loans WHERE trx_id = %s AND status = 'approved'", (trx_id,))
+            loan = cursor.fetchone()
+            if not loan:
+                return jsonify({"status": "error", "message": "Loan not found or already paid."})
+
+            user_id = loan["user_id"]
+            amount_due = loan["return_amount"]
+            cursor.execute("SELECT balance FROM user_profile WHERE user_id = %s", (user_id,))
+            user = cursor.fetchone()
+            if not user or user["balance"] < amount_due:
+                return jsonify({"status": "error", "message": "Insufficient Balance"})
+            cursor.execute("UPDATE user_profile SET balance = balance - %s WHERE user_id = %s", (amount_due, user_id))
+            cursor.execute("DELETE FROM loans WHERE trx_id = %s", (trx_id,))
+
+            #Notification
+            alert = f"Your loan of {amount_due} has been fully paid."
+            cursor.execute("INSERT INTO notifications (user_id, alerts) VALUES (%s, %s)", (user_id, alert))
+            cursor.execute("""
+                INSERT INTO history (user_id, type, trx_id, account, amount)
+                VALUES (%s, %s, %s, %s, %s)
+            """, (user_id, "Loan Payment", "N/A", "N/A", amount_due))
+
+        db.commit()
+        return jsonify({"status": "success"})
+    
+    except Exception as e:
+        print("Loan payment error:", e)
+        db.rollback()
+        return jsonify({"status": "error", "message": "An error occurred"})
 
 
 
