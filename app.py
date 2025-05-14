@@ -1121,6 +1121,46 @@ def send_now():
 
     return redirect(url_for('send_now', status='success'))
 
+# Undo Transaction
+@app.route("/cancel_transaction/<trx_id>", methods=["POST"])
+def cancel_transaction(trx_id):
+    user_id = request.cookies.get("user_id")
+    print("Cancel request for trx_id:", trx_id, "| user_id:", user_id)
+
+    try:
+        with db.cursor() as cursor:
+            cursor.execute("""
+                SELECT amount FROM history
+                WHERE LOWER(trx_id) = LOWER(%s) AND user_id = %s
+            """, (trx_id, user_id))
+            result = cursor.fetchone()
+
+            if not result:
+                print("Transaction not found")
+                return jsonify({"status": "error", "message": "Transaction not found"})
+
+            amount = result["amount"]
+            cursor.execute("""
+                SELECT * FROM admin_reports
+                WHERE user_id = %s AND trx_id = %s AND report_type = 'Request Cancellation'
+            """, (user_id, trx_id))
+            if cursor.fetchone():
+                return jsonify({"status": "exists", "message": "Already requested"})
+
+            cursor.execute("""
+                INSERT INTO admin_reports (user_id, report_type, trx_id, amount)
+                VALUES (%s, 'Request Cancellation', %s, %s)
+            """, (user_id, trx_id, amount))
+
+        db.commit()
+        print("Cancellation logged.")
+        return jsonify({"status": "success"})
+
+    except Exception as e:
+        print("Error:", e)
+        db.rollback()
+        return jsonify({"status": "error", "message": "Internal server error"})
+
 ### Subah Fatima Hasan ###
 
 
