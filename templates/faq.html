@@ -1,0 +1,326 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>FAQ Chatbot - Mobile Banking</title>
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      font-family: playfair display;
+      background: url('https://i.postimg.cc/zfRYFmYQ/26768-2.jpg') no-repeat center center fixed;
+      background-size: cover;
+      display: flex;
+      flex-direction: column;
+      height: 100vh; 
+    }
+
+    nav {
+      background-color: #0f2749;
+      padding: 10px 20px;
+      display: flex;
+      align-items: center;
+    }
+
+    nav img {
+      height: 40px;
+      cursor: pointer;
+    }
+
+    #chat {
+      flex: 1;
+      padding: 20px;
+      overflow-y: auto;
+      background-color: None;
+    }
+
+    .message-row {
+      display: flex;
+      align-items: flex-start;
+      margin-bottom: 15px;
+    }
+
+    .message-row.user {
+      justify-content: flex-end;
+    }
+
+    .avatar {
+      width: 30px;
+      height: 30px;
+      border-radius: 50%;
+      margin-right: 10px;
+    }
+
+    .message-row.user .avatar {
+      margin-left: 10px;
+      margin-right: 0;
+    }
+
+    .bubble {
+      background-color: #aac5ea;
+      color: black;
+      padding: 10px 15px;
+      border-radius: 20px;
+      max-width: 70%;
+      word-wrap: break-word;
+      font-family:  playfair display;
+    }
+
+    .message-row.user .bubble {
+      background-color: #ccf;
+      color: #000;
+    }
+
+    .options {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-top: 10px;
+    }
+
+    .option-btn {
+      background-color: #0f2749;
+      color: #aac5ea;
+      border: 1px solid #aac5ea;
+      padding: 8px 12px;
+      border-radius: 15px;
+      cursor: pointer;
+      font-family:  playfair display;
+    }
+
+    .option-btn:hover {
+      background-color: #aac5ea;
+      color: #0f2749;
+    }
+
+    .button-container {
+      display: flex;
+      justify-content: center;
+      gap: 20px;
+      margin: 10px;
+    }
+
+    .back-button, .new-convo-button {
+      background-color: #cc0000;
+      color: black;
+      font-weight: bold;
+      border: none;
+      padding: 10px;
+      border-radius: 4px;
+      cursor: pointer;
+      width: 100px;
+      font-family:  playfair display;
+    }
+
+    .new-convo-button {
+      background-color: #1d3b63;
+      color: white;
+    }
+  </style>
+</head>
+<body>
+
+<nav>
+  <img src="https://i.postimg.cc/nLt7Kfnk/Mobile-Banking-Logo.png" alt="Logo" onclick="">
+</nav>
+
+<div id="chat"></div>
+
+<div class="button-container">
+  <button class="new-convo-button" onclick="restartFAQ()">New Conversation</button>
+  <button class="back-button" onclick="goBack()">Back</button>
+</div>
+
+<script>
+const chat = document.getElementById("chat");
+
+const faqData = [
+  {
+    title: "Manage My Account",
+    subtopics: [
+      {
+        title: "Create and Login",
+        details: [
+          { q: "What do I need to sign up?", a: "You need Full Name, Phone Number, Email, NID, and Password to create an account." },
+          { q: "Is login secure?", a: "Yes, your login is secured with encryption technology." },
+          { q: "What to do if I forget my password?", a: "No. It’s not available right now. You can contact us for this issue." }
+        ]
+      },
+      {
+        title: "Update Profile",
+        details: [
+          { q: "What can I update in my profile?", a: "You can update your Name, Email, Phone Number, and Date of Birth." },
+          { q: "When will the changes reflect?", a: "Changes are reflected immediately after saving." }
+        ]
+      },
+      {
+        title: "Security Features",
+        details: [
+          { q: "What is a transaction limit?", a: "It’s the maximum amount allowed per transaction to prevent fraud." },
+          { q: "How do I set my transaction limit?", a: "Go to your profile settings and choose the “Transaction Limit” option." }
+        ]
+      } 
+    ]
+  },
+  {
+    title: "Add Money",
+    subtopics: [
+      {
+        title: "Add Money",
+        details: [
+          { q: "How can I add money to my account?", a: "You can add money via Bank Account, Card." },
+          { q: "Can I add money from multiple sources?", a: "Yes, you can add money via Bank Account, Card." }
+        ]
+      },
+      {
+        title: "Gift Card and Rewards",
+        details: [
+          { q: "What is a gift card?", a: "Gift cards are prepaid cards you can redeem as money into your account." },
+        ]
+      }
+    ]
+  },
+  {
+    title: "Make Payments",
+    subtopics: [
+      {
+        title: "Bill Payments",
+        details: [
+          { q: "What bills can I pay?", a: "You can pay Electricity, Gas, and WiFi bills." },
+          { q: "Can I pay in installments?", a: "Yes, you can choose to pay bills in installments." }
+        ]
+      },
+      {
+        title: "Send and Request Money",
+        details: [
+          { q: "Can I send money internationally?", a: "Yes, international transfer is available for supported countries." },
+        ]
+      }
+    ]
+  },
+  {
+    title: "Loans and Investments",
+    subtopics: [
+      {
+        title: "Micro Loans",
+        details: [
+          { q: "How to apply for a micro loan?", a: "Go to Loans section, select amount and send for approval." },
+          { q: "When will I receive the loan?", a: "Loan is usually credited instantly upon approval." }
+        ]
+      },
+      {
+        title: "Investments",
+        details: [
+          { q: "Where can I invest?", a: "You can invest in investments through Mobile Banking." },
+          { q: "What is the minimum investment amount?", a: "You can invest money from you end as you want." }
+        ]
+      }
+    ]
+  },
+  {
+    title: "Security and Support",
+    subtopics: [
+      {
+        title: "Account Security",
+        details: [
+          { q: "How is my account protected?", a: "Your account is protected by encryption, secure login." },
+        ]
+      },
+      {
+        title: "Help and Support",
+        details: [
+          { q: "Is there 24/7 customer support?", a: "No, You can contact us for details." }
+        ]
+      }
+    ]
+  }
+];
+
+// Functions
+
+function goHome() {
+  window.location.href = "/home";
+}
+
+function goBack() {
+  window.history.back();
+}
+
+function restartFAQ() {
+  window.location.href = "/faq";
+}
+
+function addMessage(text, sender = "bot") {
+  const row = document.createElement("div");
+  row.className = `message-row ${sender}`;
+
+  const avatar = document.createElement("img");
+  avatar.src = sender === "bot"
+    ? "https://i.postimg.cc/x87RdF1V/bot.jpg"
+    : "https://i.postimg.cc/y86VfCdF/User-Profile-PNG-Image.png";
+  avatar.className = "avatar";
+
+  const bubble = document.createElement("div");
+  bubble.className = `bubble ${sender}`;
+  bubble.innerHTML = text;
+
+  row.appendChild(sender === "bot" ? avatar : bubble);
+  row.appendChild(sender === "bot" ? bubble : avatar);
+
+  chat.appendChild(row);
+  chat.scrollTo({ top: chat.scrollHeight, behavior: "smooth" });
+}
+
+function showOptions(options, callback) {
+  const optionsDiv = document.createElement("div");
+  optionsDiv.className = "options";
+
+  options.forEach((option, index) => {
+    const btn = document.createElement("button");
+    btn.className = "option-btn";
+    btn.textContent = option;
+    btn.onclick = () => {
+      addMessage(option, "user");
+      optionsDiv.remove();
+      callback(index);
+    };
+    optionsDiv.appendChild(btn);
+  });
+
+  chat.appendChild(optionsDiv);
+  chat.scrollTo({ top: chat.scrollHeight, behavior: "smooth" });
+}
+
+window.onload = startFAQ;
+
+function startFAQ() {
+  addMessage("Hello! How can I assist you today?");
+  setTimeout(() => {
+    const firstOptions = faqData.map(item => item.title);
+    showOptions(firstOptions, handleMainCategory);
+  }, 1000);
+}
+
+function handleMainCategory(index) {
+  const subtopics = faqData[index].subtopics;
+  const secondOptions = subtopics.map(sub => sub.title);
+  addMessage(`You selected "${faqData[index].title}".`);
+  setTimeout(() => {
+    showOptions(secondOptions, subIndex => handleSubCategory(index, subIndex));
+  }, 1000);
+}
+
+function handleSubCategory(mainIndex, subIndex) {
+  const questions = faqData[mainIndex].subtopics[subIndex].details;
+  const thirdOptions = questions.map(q => q.q);
+  addMessage(`You selected "${faqData[mainIndex].subtopics[subIndex].title}".`);
+  setTimeout(() => {
+    showOptions(thirdOptions, qIndex => {
+      addMessage(questions[qIndex].a);
+    });
+  }, 1000);
+}
+</script>
+
+</body>
+</html>

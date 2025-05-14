@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Favourite Accounts</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: playfair display;
+    }
+
+    body {
+      background-image: url('https://i.postimg.cc/8zYdf8C0/sa.avif');
+      background-size: cover;
+      background-position: center;
+      background-attachment: fixed;
+      min-height: 100vh;
+      color: #333;
+      padding: 40px 20px;
+    }
+
+    .navbar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 15px 20px;
+      background-color: #0f2749;
+      margin: -40px -20px 30px -20px;
+    }
+
+    .logo-btn {
+      width: 120px;
+      height: 40px;
+      background-color: transparent;
+      border: none;
+      cursor: pointer;
+      background-image: url('https://i.postimg.cc/nLt7Kfnk/Mobile-Banking-Logo.png');
+      background-size: contain;
+      background-repeat: no-repeat;
+      background-position: center;
+    }
+
+    .container {
+      max-width: 1100px;
+      margin: 0 auto;
+      background-color: #b2d2ee;
+      border-radius: 12px;
+      padding: 30px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+    }
+
+    h2 {
+      text-align: center;
+      margin-bottom: 25px;
+      color: #0f2749;
+    }
+
+    .search-bar {
+      width: 100%;
+      padding: 10px 15px;
+      margin-bottom: 20px;
+      border-radius: 6px;
+      border: 1px solid #ccc;
+      font-size: 16px;
+    }
+
+    .phonebook-entry {
+      padding: 15px 20px;
+      border: 1px solid #ccc;
+      border-radius: 8px;
+      margin-bottom: 15px;
+      background-color: #f1f5f9;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      cursor: pointer;
+    }
+
+    .phonebook-entry:hover {
+      background-color: #e2e8f0;
+    }
+
+    .entry-info {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .entry-name {
+      font-weight: bold;
+      color: #0f2749;
+    }
+
+    .entry-phone {
+      font-size: 16px;
+      color: #333;
+    }
+
+    .delete-form {
+      margin-left: 20px;
+    }
+
+    .btn-delete {
+      padding: 6px 12px;
+      border: none;
+      border-radius: 4px;
+      background-color: #c0392b;
+      color: white;
+      cursor: pointer;
+    }
+
+    .btn-delete:hover {
+      background-color: #922b21;
+    }
+
+    .no-entries {
+      text-align: center;
+      font-size: 18px;
+      color: #444;
+      margin-top: 20px;
+    }
+
+    .btn-wrapper {
+      display: flex;
+      justify-content: center;
+      margin-top: 30px;
+    }
+
+    .btn-back {
+      padding: 10px 20px;
+      border: none;
+      border-radius: 6px;
+      font-weight: bold;
+      background-color: #555;
+      color: white;
+      cursor: pointer;
+    }
+
+    .btn-back:hover {
+      background-color: #333;
+    }
+  </style>
+</head>
+<body>
+
+  <nav class="navbar">
+    <button class="logo-btn" onclick="location.href='/home'"></button>
+  </nav>
+
+  <div class="container">
+    <h2>Saved Contacts</h2>
+
+    <input type="text" class="search-bar" placeholder="Search by name or phone..." onkeyup="filterContacts()" id="searchInput" />
+
+    <div id="contactList">
+    {% if saved_contacts %}
+      {% for contact in saved_contacts %}
+      <div class="phonebook-entry" onclick="location.href='/send_now?name={{ contact.name }}&phone={{ contact.phone }}'">
+        <div class="entry-info">
+          <div class="entry-name">{{ contact.name }}</div>
+          <div class="entry-phone">{{ contact.phone }}</div>
+        </div>
+        <form class="delete-form" method="POST" action="/delete_contact">
+          <input type="hidden" name="name" value="{{ contact.name }}">
+          <input type="hidden" name="phone" value="{{ contact.phone }}">
+          <button type="submit" class="btn-delete" onclick="event.stopPropagation();">Delete</button>
+        </form>
+      </div>
+      {% endfor %}
+    {% else %}
+      <div class="no-entries">No contacts saved yet.</div>
+    {% endif %}
+    </div>
+
+    <div class="btn-wrapper">
+      <a href="/home" class="btn-back">Back</a>
+    </div>
+  </div>
+
+  <script>
+    function filterContacts() {
+      const input = document.getElementById("searchInput");
+      const filter = input.value.toLowerCase();
+      const entries = document.querySelectorAll(".phonebook-entry");
+
+      entries.forEach(entry => {
+        const name = entry.querySelector(".entry-name").textContent.toLowerCase();
+        const phone = entry.querySelector(".entry-phone").textContent.toLowerCase();
+        if (name.includes(filter) || phone.includes(filter)) {
+          entry.style.display = "flex";
+        } else {
+          entry.style.display = "none";
+        }
+      });
+    }
+  </script>
+
+</body>
+</html>

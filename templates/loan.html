@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Request Loan</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      font-family: playfair display;
+    }
+
+    body {
+      background-image: url('https://i.postimg.cc/tJMgb8xY/loan.avif');
+      background-size: cover;
+      background-position: center;
+      background-attachment: fixed;
+      min-height: 100vh;
+      background-color: #f5f5f5;
+    }
+
+    .navbar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 15px 20px;
+      background-color: #0f2749;
+    }
+
+    .logo-btn {
+      width: 100px;
+      height: 40px;
+      background-color: transparent;
+      border: none;
+      cursor: pointer;
+      background-image: url('https://i.postimg.cc/nLt7Kfnk/Mobile-Banking-Logo.png');
+      background-size: contain;
+      background-repeat: no-repeat;
+      background-position: center;
+    }
+
+    .nav-right {
+      display: flex;
+      gap: 8px;
+    }
+
+    .nav-right button {
+      padding: 6px 10px;
+      font-size: 12px;
+      border: none;
+      border-radius: 5px;
+      background-color: #aac5ea;
+      color: #000;
+      font-weight: bold;
+      cursor: pointer;
+    }
+
+    .container {
+      max-width: 500px;
+      margin: 40px auto;
+      background-color: rgba(255, 255, 255, 0.9);
+      padding: 20px;
+      border-radius: 10px;
+      box-shadow: 0 4px 10px #0f2749;
+    }
+
+    .container h2 {
+      text-align: center;
+      margin-bottom: 20px;
+      color: #0f2749;
+    }
+
+    .form-group {
+      margin-bottom: 15px;
+    }
+
+    .form-group label {
+      display: block;
+      font-weight: bold;
+      margin-bottom: 6px;
+      color: #0f2749;
+    }
+
+    .form-group input,
+    .form-group select {
+      width: 100%;
+      padding: 8px;
+      border-radius: 5px;
+      border: 1px solid #ccc;
+      font-size: 14px;
+    }
+
+    .form-group input[readonly] {
+      background-color: #e0e0e0;
+      cursor: not-allowed;
+    }
+
+    .button-row {
+      display: flex;
+      justify-content: space-between;
+      margin-top: 20px;
+    }
+
+    .button-row button {
+      padding: 8px 16px;
+      border: none;
+      border-radius: 5px;
+      background-color: #0f2749;
+      color: white;
+      font-weight: bold;
+      cursor: pointer;
+      font-size: 13px;
+    }
+
+    .button-row button:hover {
+      background-color: #3e75c2;
+    }
+
+    #popup {
+      display: none;
+      position: fixed;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      background-color: rgba(0, 0, 0, 0.6);
+      justify-content: center;
+      align-items: center;
+      z-index: 1000;
+    }
+
+    #popup .popup-content {
+      background-color: white;
+      padding: 30px;
+      border-radius: 10px;
+      text-align: center;
+      box-shadow: 0 0 10px #000;
+    }
+
+    #popup p {
+      font-size: 16px;
+      font-weight: bold;
+      color: #0f2749;
+      margin-bottom: 20px;
+    }
+
+    #popup button {
+      padding: 8px 16px;
+      background-color: #0f2749;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      font-weight: bold;
+      cursor: pointer;
+      font-size: 13px;
+    }
+  </style>
+</head>
+<body>
+
+  <nav class="navbar">
+    <button class="logo-btn" id="logoBtn"></button>
+  </nav>
+
+  <div class="container">
+    <h2>Request Loan</h2>
+    <div class="form-group">
+      <label for="loanAmount">Loan Amount</label>
+      <input type="number" id="loanAmount" min="0" />
+    </div>
+
+    <div class="form-group">
+      <label for="duration">Duration (Months)</label>
+      <select id="duration">
+        <option value="">-- Select Duration --</option>
+        <option value="1">1 month</option>
+        <option value="2">2 months</option>
+        <option value="3">3 months</option>
+        <option value="4">4 months</option>
+        <option value="5">5 months</option>
+        <option value="6">6 months</option>
+      </select>
+    </div>
+
+    <div class="form-group">
+      <label for="interestRate">Interest Rate (%)</label>
+      <input type="text" id="interestRate" readonly />
+    </div>
+
+    <div class="form-group">
+      <label for="loanWithInterest">Loan Amount with Interest</label>
+      <input type="text" id="loanWithInterest" readonly />
+    </div>
+
+    <div class="form-group">
+      <label for="returnDate">Return Date</label>
+      <input type="text" id="returnDate" readonly />
+    </div>
+
+    <div class="button-row">
+      <button id="confirmBtn" disabled>Confirm Request</button>
+      <button id="homeBtn">Home</button>
+    </div>
+  </div>
+
+  <!-- Popup Message -->
+  <div id="popup">
+    <div class="popup-content">
+      <p>Loan request submitted. You will receive a notification soon.</p>
+      <button onclick="location.href='/home'">Home</button>
+    </div>
+  </div>
+
+  <script>
+    const interestRates = {
+      1: 5,
+      2: 5.5,
+      3: 6,
+      4: 6.5,
+      5: 7,
+      6: 7.5
+    };
+  
+    const loanAmountInput = document.getElementById('loanAmount');
+    const durationSelect = document.getElementById('duration');
+    const interestRateInput = document.getElementById('interestRate');
+    const loanWithInterestInput = document.getElementById('loanWithInterest');
+    const returnDateInput = document.getElementById('returnDate');
+    const confirmBtn = document.getElementById('confirmBtn');
+  
+    function updateFields() {
+      const amount = parseFloat(loanAmountInput.value);
+      const duration = parseInt(durationSelect.value);
+  
+      if (!isNaN(amount) && interestRates[duration]) {
+        const rate = interestRates[duration];
+        interestRateInput.value = rate + '%';
+  
+        const totalAmount = amount + (amount * (rate / 100));
+        loanWithInterestInput.value = totalAmount.toFixed(2);
+  
+        const today = new Date();
+        today.setMonth(today.getMonth() + duration);
+        const returnDate = today.toLocaleDateString(undefined, {
+          year: 'numeric',
+          month: 'long',
+          day: 'numeric'
+        });
+        returnDateInput.value = returnDate;
+      } else {
+        interestRateInput.value = '';
+        loanWithInterestInput.value = '';
+        returnDateInput.value = '';
+      }
+  
+      validateForm();
+    }
+  
+    function validateForm() {
+      const isAmountValid = loanAmountInput.value.trim() !== '' && !isNaN(parseFloat(loanAmountInput.value));
+      const isDurationValid = durationSelect.value !== '';
+      const isInterestValid = interestRateInput.value.trim() !== '';
+      const isTotalValid = loanWithInterestInput.value.trim() !== '';
+      const isDateValid = returnDateInput.value.trim() !== '';
+  
+      confirmBtn.disabled = !(isAmountValid && isDurationValid && isInterestValid && isTotalValid && isDateValid);
+    }
+  
+    loanAmountInput.addEventListener('input', updateFields);
+    durationSelect.addEventListener('change', updateFields);
+  
+    confirmBtn.onclick = function () {
+      const amount = parseFloat(loanAmountInput.value);
+      const duration = parseInt(durationSelect.value);
+  
+      fetch('/api/request-loan', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ amount, duration })
+      })
+      .then(res => res.json())
+      .then(data => {
+        console.log("Response from backend:", data);
+        document.getElementById('popup').style.display = 'flex';
+      })
+      .catch(err => {
+        console.error("Loan request failed:", err);
+        alert("Something went wrong while sending your request.");
+      });
+    };
+  
+    document.getElementById('homeBtn').onclick = function () {
+      window.location.href = "/home";
+    };
+  
+    confirmBtn.disabled = true;
+  </script>
+  
+
+</body>
+</html>

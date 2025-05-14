@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Transaction Limit</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: playfair display;
+    }
+
+    body {
+      background-image: url('https://i.postimg.cc/ZYx7HpkB/repo.jpg');
+      background-size: cover;
+      background-position: center;
+      background-attachment: fixed;
+      min-height: 100vh;
+      color: #333;
+      padding: 40px 20px;
+    }
+
+    .navbar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 15px 20px;
+      background-color: #0f2749;
+      margin: -40px -20px 30px -20px;
+    }
+
+    .logo-btn {
+      width: 120px;
+      height: 40px;
+      background-color: transparent;
+      border: none;
+      cursor: pointer;
+      background-image: url('https://i.postimg.cc/nLt7Kfnk/Mobile-Banking-Logo.png');
+      background-size: contain;
+      background-repeat: no-repeat;
+      background-position: center;
+    }
+
+    .container {
+      max-width: 400px;
+      margin: 80px auto;
+      background-color: rgba(255, 255, 255, 0.95);
+      border-radius: 12px;
+      padding: 30px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+      text-align: center;
+    }
+
+    h2 {
+      margin-bottom: 25px;
+      color: #0f2749;
+    }
+
+    input[type="number"] {
+      width: 100%;
+      padding: 12px;
+      border: 1px solid #aaa;
+      border-radius: 6px;
+      font-size: 16px;
+      margin-bottom: 10px;
+    }
+
+    #currentLimitMessage {
+      margin-top: 5px;
+      margin-bottom: 25px;
+      color: #0f2749;
+      font-weight: bold;
+    }
+
+    .button-group {
+      display: flex;
+      justify-content: center;
+      gap: 20px;
+    }
+
+    .btn {
+      padding: 10px 20px;
+      background-color: #aac5ea;
+      color: black;
+      font-weight: bold;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+      transition: background-color 0.2s;
+    }
+
+    .btn:hover {
+      background-color: #91aed2;
+    }
+
+    .popup {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background: white;
+      border-radius: 12px;
+      padding: 30px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+      text-align: center;
+      display: none;
+      z-index: 999;
+    }
+
+    .popup h3 {
+      color: #0f2749;
+      margin-bottom: 20px;
+    }
+
+    .overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0,0,0,0.4);
+      z-index: 998;
+      display: none;
+    }
+  </style>
+</head>
+<body>
+
+  <nav class="navbar">
+    <button class="logo-btn" id="logoBtn"></button>
+  </nav>
+
+  <div class="container">
+    <h2>Enter the Transaction Limit Amount</h2>
+    <input type="number" id="limitAmount" placeholder="Enter amount" min="1" />
+    <p id="currentLimitMessage">
+      Current Transaction Limit: <span id="limitValue">{{ transaction_limit }}</span>
+    </p>
+    <div class="button-group">
+      <button class="btn" id="confirmBtn">Confirm</button>
+      <button class="btn" onclick="location.href='/home'">Home</button>
+    </div>
+  </div>
+
+  <div class="overlay" id="overlay"></div>
+
+  <div class="popup" id="successPopup">
+    <h3>Transaction Limit Updated Successfully.</h3>
+    <button class="btn" onclick="location.href='/home'">Home</button>
+  </div>
+
+  <script>
+    // Logo redirects to home
+    document.getElementById('logoBtn').onclick = () => {
+      location.href = "/home";
+    };
+
+    // Confirm button click
+    document.getElementById("confirmBtn").onclick = function () {
+      const amount = document.getElementById("limitAmount").value;
+      if (amount.trim() === "" || Number(amount) <= 0) {
+        alert("Please enter a valid amount.");
+        return;
+      }
+
+      // Send amount to backend
+      fetch("/set_limit", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({ amount: Number(amount) })
+      })
+      .then(res => res.json())
+      .then(data => {
+        if (data.success) {
+          document.getElementById("overlay").style.display = "block";
+          document.getElementById("successPopup").style.display = "block";
+        } else {
+          alert(data.message || "Failed to update transaction limit.");
+        }
+      })
+      .catch(err => {
+        alert("Something went wrong.");
+        console.error(err);
+      });
+    };
+  </script>
+
+</body>
+</html>

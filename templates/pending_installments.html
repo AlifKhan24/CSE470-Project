@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Pending Installments</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: playfair display;
+    }
+
+    body {
+      background-image: url('https://i.postimg.cc/76hys246/invs.jpg');
+      background-size: cover;
+      background-position: center;
+      background-attachment: fixed;
+      min-height: 100vh;
+      color: #333;
+      padding: 40px 20px;
+    }
+
+    .navbar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 15px 20px;
+      background-color: #0f2749;
+      margin: -40px -20px 30px -20px;
+    }
+
+    .logo-btn {
+      width: 120px;
+      height: 40px;
+      background-color: transparent;
+      border: none;
+      cursor: pointer;
+      background-image: url('https://i.postimg.cc/nLt7Kfnk/Mobile-Banking-Logo.png');
+      background-size: contain;
+      background-repeat: no-repeat;
+      background-position: center;
+    }
+
+    .container {
+      max-width: 1100px;
+      margin: 0 auto;
+      background-color: rgba(255, 255, 255, 0.95);
+      border-radius: 12px;
+      padding: 30px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+    }
+
+    h2 {
+      text-align: center;
+      margin-bottom: 25px;
+      color: #0f2749;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-bottom: 30px;
+    }
+
+    th, td {
+      padding: 12px 10px;
+      border: 1px solid #ccc;
+      text-align: left;
+    }
+
+    th {
+      background-color: #aac5ea;
+      color: #000;
+    }
+
+    .back-btn {
+      display: block;
+      margin: 0 auto;
+      padding: 10px 20px;
+      background-color: #aac5ea;
+      color: black;
+      font-weight: bold;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+      transition: background-color 0.2s;
+    }
+
+    .back-btn:hover {
+      background-color: #91aed2;
+    }
+  </style>
+</head>
+<body>
+
+  <nav class="navbar">
+    <button class="logo-btn" onclick="location.href='/home'"></button>
+  </nav>
+
+  <div class="container">
+    <h2>Pending Installments</h2>
+
+    <table>
+      <thead>
+        <tr>
+          <th>Service</th>
+          <th>Amount</th>
+          <th>Issue Date</th>
+          <th>Due Date</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for entry in installments %}
+        <tr>
+          <td>{{ entry.service }}</td>
+          <td>৳ {{ entry.amount }}</td>
+          <td>{{ entry.issue_date }}</td>
+          <td>{{ entry.due_date }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+
+    <button class="back-btn" onclick="location.href='/profile'">Back</button>
+  </div>
+</body>
+</html>
