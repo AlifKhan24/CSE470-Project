@@ -931,6 +931,28 @@ def electricity_bill():
             db.commit()
             return render_template("electricity_bill.html", popup="success")
 
+# History
+@app.route("/history")
+def history():
+    user_id = request.cookies.get("user_id")
+
+    if not user_id:
+        return "User not logged in or session expired", 401
+
+    try:
+        with db.cursor() as cursor:
+            cursor.execute("""
+                SELECT type, trx_id, account, time, amount
+                FROM history
+                WHERE user_id = %s
+                ORDER BY time DESC
+            """, (user_id,))
+            history_records = cursor.fetchall()
+    except Exception as e:
+        history_records = []
+
+    return render_template("history.html", history_records=history_records)
+
 ### Saifuddin Tanzil ###
 
 ### Subah Fatima Hasan ###
